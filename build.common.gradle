@@ -44,6 +44,9 @@ android {
             keyPassword 'android'
             storeFile rootProject.file('libs/ftc.debug.keystore')
             storePassword 'android'
+            ndk {
+                abiFilters "armeabi-v7a"
+            }
         }
     }
 

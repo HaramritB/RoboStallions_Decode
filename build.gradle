@@ -12,6 +12,11 @@ buildscript {
     dependencies {
         // Note for FTC Teams: Do not modify this yourself.
         classpath 'com.android.tools.build:gradle:8.7.0'
+        doc 'org.firstinspires.ftc:Hardware:6.2.0'
+        doc 'org.firstinspires.ftc:RobotCore:6.2.0'
+        doc 'org.firstinspires.ftc:FtcCommon:6.2.0'
+        doc 'org.firstinspires.ftc:OnBotJava:6.2.0'
+        doc 'org.firstinspires.ftc:Inspection:6.2.0'
     }
 }
 
