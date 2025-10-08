@@ -23,7 +23,7 @@ public class Constants {
             .useSecondaryDrivePIDF(true)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0))
             .secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(0.2,0,0.01,0))
-            .headingPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0))
+            .headingPIDFCoefficients(new PIDFCoefficients(2.0, 0, 0.01, 0))
             .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(0.1,0,0.01,0));
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1.2, 1);
