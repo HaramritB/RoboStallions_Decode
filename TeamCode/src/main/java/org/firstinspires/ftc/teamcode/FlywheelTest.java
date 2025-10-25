@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.subsystems.Flywheel;
+import org.firstinspires.ftc.teamcode.Flywheel;
 
 @TeleOp(name = "Flywheel + Hood Test", group = "Testing")
 public class FlywheelTest extends LinearOpMode {
@@ -26,7 +26,7 @@ public class FlywheelTest extends LinearOpMode {
             if (gamepad1.a) {
                 flywheel.setVelocity(2000); // tune ticks/sec
             } else if (gamepad1.b) {
-                flywheel.setPower(0.8);
+                flywheel.setPower(0.6);
             } else {
                 flywheel.stop();
             }
