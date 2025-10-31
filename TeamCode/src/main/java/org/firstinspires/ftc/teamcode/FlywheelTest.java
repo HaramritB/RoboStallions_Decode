@@ -24,9 +24,9 @@ public class FlywheelTest extends LinearOpMode {
         while (opModeIsActive()) {
             // Flywheel control
             if (gamepad1.a) {
-                flywheel.setVelocity(2000); // tune ticks/sec
+                flywheel.setVelocity(1500); // tune ticks/sec
             } else if (gamepad1.b) {
-                flywheel.setPower(0.6);
+                flywheel.setPower(0.3);
             } else {
                 flywheel.stop();
             }
