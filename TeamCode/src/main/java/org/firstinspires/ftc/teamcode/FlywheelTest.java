@@ -21,26 +21,34 @@ public class FlywheelTest extends LinearOpMode {
 
         waitForStart();
 
+        double velocity = 0.0;
+        double maxVelocity = 10;
+        double rampRate = 0.5;
+        double loopDelay = 50;
+
         while (opModeIsActive()) {
             // Flywheel control
             if (gamepad1.a) {
-                flywheel.setVelocity(1500); // tune ticks/sec
-            } else if (gamepad1.b) {
-                flywheel.setPower(0.3);
+                if (velocity < maxVelocity) {
+                    velocity += rampRate * (maxVelocity - velocity);
+                }
             } else {
-                flywheel.stop();
+                velocity += rampRate * (0 - velocity);
             }
+            flywheel.setVelocity(velocity);
 
-            // Hood control
+
             if (gamepad1.x) {
                 flywheel.openHood();
             } else if (gamepad1.y) {
                 flywheel.closeHood();
             }
 
-            telemetry.addData("Flywheel Vel", flywheel.getAverageVelocity());
-            telemetry.addData("Hood Pos", flywheel.getHoodPosition());
+            telemetry.addData("Flywheel Vel", velocity);
+            telemetry.addData("Hood Pos", flywheel.getAverageVelocity());
             telemetry.update();
+
+            sleep((long) loopDelay);
         }
 
         flywheel.stop();
