@@ -7,22 +7,16 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Flywheel {
-    // === Flywheel motors ===
     private DcMotorEx low;
     private DcMotorEx high;
-
-    // === Hood servo ===
     private Servo hoodServo;
 
-    // === PIDF tuning (adjust for your motors) ===
-    private static final PIDFCoefficients PIDF_COEFFS = new PIDFCoefficients(10.0, 3.0, 0.0, 12.0);
 
-    // === Hood servo positions (tune for your setup) ===
+    private static final PIDFCoefficients PIDF_COEFFS = new PIDFCoefficients(10.0, 3.0, 0.0, 12.0);
     private static final double HOOD_CLOSED = 0.0;
     private static final double HOOD_OPEN = 0.8;
 
     public Flywheel(HardwareMap hardwareMap) {
-        // Map flywheel motors
         low = hardwareMap.get(DcMotorEx.class, "low");
         high = hardwareMap.get(DcMotorEx.class, "high");
 
@@ -41,13 +35,11 @@ public class Flywheel {
         low.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, PIDF_COEFFS);
         high.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, PIDF_COEFFS);
 
-        // Map hood servo
         hoodServo = hardwareMap.get(Servo.class, "hood");
         hoodServo.scaleRange(0.0, 1.0);
     }
 
-    /** === Flywheel Control === */
-
+    /** Flywheel Control */
     public void setVelocity(double velocity) {
         low.setVelocity(velocity);
         high.setVelocity(velocity);
@@ -66,8 +58,7 @@ public class Flywheel {
         return (low.getVelocity() + high.getVelocity()) / 2.0;
     }
 
-    /** === Hood Control === */
-
+    /** Hood Control */
     public void openHood() {
         hoodServo.setPosition(HOOD_OPEN);
     }
@@ -83,4 +74,6 @@ public class Flywheel {
     public double getHoodPosition() {
         return hoodServo.getPosition();
     }
+
+
 }

@@ -3,10 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.Flywheel;
-
 @TeleOp(name = "Flywheel + Hood Test", group = "Testing")
 public class FlywheelTest extends LinearOpMode {
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -22,12 +21,13 @@ public class FlywheelTest extends LinearOpMode {
         waitForStart();
 
         double velocity = 0.0;
-        double maxVelocity = 10;
-        double rampRate = 0.5;
+        double maxVelocity = 1000; // encoder ticks/sec
+        double rampRate = 0.1;     // smooth acceleration factor
         double loopDelay = 50;
 
         while (opModeIsActive()) {
-            // Flywheel control
+
+            // Velocity ramping
             if (gamepad1.a) {
                 if (velocity < maxVelocity) {
                     velocity += rampRate * (maxVelocity - velocity);
@@ -35,17 +35,20 @@ public class FlywheelTest extends LinearOpMode {
             } else {
                 velocity += rampRate * (0 - velocity);
             }
+
             flywheel.setVelocity(velocity);
 
-
+            // Hood control
             if (gamepad1.x) {
                 flywheel.openHood();
             } else if (gamepad1.y) {
                 flywheel.closeHood();
             }
 
-            telemetry.addData("Flywheel Vel", velocity);
-            telemetry.addData("Hood Pos", flywheel.getAverageVelocity());
+            // Telemetry
+            telemetry.addData("Flywheel Target Vel", velocity);
+            telemetry.addData("Flywheel Avg Vel", flywheel.getAverageVelocity());
+            telemetry.addData("Hood Pos", flywheel.getHoodPosition());
             telemetry.update();
 
             sleep((long) loopDelay);
@@ -53,4 +56,6 @@ public class FlywheelTest extends LinearOpMode {
 
         flywheel.stop();
     }
+
+
 }
