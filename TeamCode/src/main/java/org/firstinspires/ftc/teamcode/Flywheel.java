@@ -11,10 +11,12 @@ public class Flywheel {
     private DcMotorEx high;
     private Servo hoodServo;
 
-
     private static final PIDFCoefficients PIDF_COEFFS = new PIDFCoefficients(10.0, 3.0, 0.0, 12.0);
     private static final double HOOD_CLOSED = 0.0;
     private static final double HOOD_OPEN = 0.8;
+
+    // Adjust this for your specific motor (GoBilda 1150 = 28 ticks/rev, 435 RPM = 28, etc.)
+    private static final double TICKS_PER_REV = 28.0;
 
     public Flywheel(HardwareMap hardwareMap) {
         low = hardwareMap.get(DcMotorEx.class, "low");
@@ -39,10 +41,17 @@ public class Flywheel {
         hoodServo.scaleRange(0.0, 1.0);
     }
 
-    /** Flywheel Control */
+    /** Flywheel velocity control (ticks/sec) */
     public void setVelocity(double velocity) {
         low.setVelocity(velocity);
         high.setVelocity(velocity);
+    }
+
+    /** NEW: Flywheel control in RPM */
+    public void setTargetRPM(double rpm) {
+        double ticksPerRev = low.getMotorType().getTicksPerRev();
+        double targetVelocity = (rpm * ticksPerRev) / 60.0; // ticks per second
+        setVelocity(targetVelocity);
     }
 
     public void setPower(double power) {
@@ -58,7 +67,7 @@ public class Flywheel {
         return (low.getVelocity() + high.getVelocity()) / 2.0;
     }
 
-    /** Hood Control */
+    /** Hood control */
     public void openHood() {
         hoodServo.setPosition(HOOD_OPEN);
     }
@@ -74,6 +83,4 @@ public class Flywheel {
     public double getHoodPosition() {
         return hoodServo.getPosition();
     }
-
-
 }
