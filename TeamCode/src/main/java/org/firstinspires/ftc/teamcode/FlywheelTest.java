@@ -44,21 +44,6 @@ public class FlywheelTest extends LinearOpMode {
                 flywheel.stop();
             }
 
-            // --- Hood Control ---
-            if (gamepad1.x) flywheel.openHood();
-            if (gamepad1.y) flywheel.closeHood();
-
-            // Fine-tune hood servo
-            if (gamepad1.right_bumper) {
-                hoodPos = Math.min(hoodPos + 0.02, 1.0);
-                flywheel.setHoodPosition(hoodPos);
-                sleep(150);
-            } else if (gamepad1.left_bumper) {
-                hoodPos = Math.max(hoodPos - 0.02, 0.0);
-                flywheel.setHoodPosition(hoodPos);
-                sleep(150);
-            }
-
             // Print constants
             if (gamepad1.a) {
                 telemetry.addLine("=== Current Constants ===");

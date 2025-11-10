@@ -27,7 +27,7 @@ public class AprilTagTracking extends LinearOpMode {
 
         waitForStart();
 
-        double kP = 0.03;
+        double kP = 0.04;
         double maxPower = 0.5;
 
         while (opModeIsActive()) {
