@@ -15,7 +15,7 @@ public class Flywheel {
     private static final double HOOD_CLOSED = 0.0;
     private static final double HOOD_OPEN = 0.8;
 
-    // Adjust this for your specific motor (GoBilda 1150 = 28 ticks/rev, 435 RPM = 28, etc.)
+    // Adjust this for your specific motor
     private static final double TICKS_PER_REV = 28.0;
 
     public Flywheel(HardwareMap hardwareMap) {
@@ -41,17 +41,11 @@ public class Flywheel {
         hoodServo.scaleRange(0.0, 1.0);
     }
 
-    /** Flywheel velocity control (ticks/sec) */
-    public void setVelocity(double velocity) {
-        low.setVelocity(velocity);
-        high.setVelocity(velocity);
-    }
-
-    /** NEW: Flywheel control in RPM */
-    public void setTargetRPM(double rpm) {
-        double ticksPerRev = low.getMotorType().getTicksPerRev();
-        double targetVelocity = (rpm * ticksPerRev) / 60.0; // ticks per second
-        setVelocity(targetVelocity);
+    /** Flywheel control in RPM */
+    public void setRPM(double rpm) {
+        double targetVelocity = (rpm * TICKS_PER_REV) / 60.0; // convert rpm → ticks/sec
+        low.setVelocity(targetVelocity);
+        high.setVelocity(targetVelocity);
     }
 
     public void setPower(double power) {
