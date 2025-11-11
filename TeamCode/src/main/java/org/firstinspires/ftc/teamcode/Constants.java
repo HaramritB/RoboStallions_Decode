@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.FollowerConstants;
@@ -11,7 +12,9 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
@@ -26,7 +29,9 @@ public class Constants {
             .headingPIDFCoefficients(new PIDFCoefficients(2.0, 0, 0.01, 0))
             .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(0.1,0,0.01,0));
 
+
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1.2, 1);
+
 
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
@@ -35,6 +40,7 @@ public class Constants {
                 .mecanumDrivetrain(driveConstants)
                 .build();
     }
+
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
@@ -49,11 +55,11 @@ public class Constants {
             .xVelocity(72.77)
             .yVelocity(64.99);
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(3.54)
-            .strafePodX(2.56)
+            .forwardPodY(2.56) // 3.54
+            .strafePodX(3.54)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
-            .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
+            .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
 }

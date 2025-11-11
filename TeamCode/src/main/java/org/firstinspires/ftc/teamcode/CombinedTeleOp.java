@@ -1,11 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp(name = "CombinedTeleOp", group = "Competition")
 public class CombinedTeleOp extends LinearOpMode {
@@ -13,101 +9,84 @@ public class CombinedTeleOp extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        // ===== DRIVE SYSTEM =====
-        DcMotor frontLeftMotor = hardwareMap.dcMotor.get("frontleft");
-        DcMotor backLeftMotor = hardwareMap.dcMotor.get("backleft");
-        DcMotor frontRightMotor = hardwareMap.dcMotor.get("frontright");
-        DcMotor backRightMotor = hardwareMap.dcMotor.get("backright");
-
-        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        frontRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        backRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-
-        // ===== LIMELIGHT + TURRET =====
-        Limelight3A limelight = hardwareMap.get(Limelight3A.class, "Limelight");
-        DcMotor rotationMotor = hardwareMap.dcMotor.get("rotation");
-        rotationMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        limelight.pipelineSwitch(7);
-        limelight.start();
-
-        double kP = 0.04;
-        double maxPower = 0.5;
-
-        // ===== FLYWHEEL SYSTEM =====
+        // ===== Initialize subsystems =====
+        MecanumTeleOpAxisLocked drive = new MecanumTeleOpAxisLocked(hardwareMap, telemetry);
+        AprilTagTracking turret = new AprilTagTracking(hardwareMap, telemetry);
         Flywheel flywheel = new Flywheel(hardwareMap);
-        double targetRPM = 0;
 
-        telemetry.addLine("Combined TeleOp initialized.");
+        double targetRPM = 0;
+        double hoodPos = flywheel.getHoodPosition();
+
+        telemetry.addLine("Combined TeleOp Initialized");
         telemetry.update();
 
         waitForStart();
-        if (isStopRequested()) return;
+
+        boolean aprilTagMode = false;
 
         while (opModeIsActive()) {
 
             // ===== DRIVE CONTROL =====
-            double y = -gamepad1.left_stick_y;
-            double x = gamepad1.left_stick_x * 1.1;
-            double rx = gamepad1.right_stick_x;
+            drive.drive(
+                    gamepad1.left_stick_y,
+                    gamepad1.left_stick_x,
+                    gamepad1.right_stick_x,
+                    gamepad1.dpad_up,
+                    gamepad1.dpad_down,
+                    gamepad1.dpad_left,
+                    gamepad1.dpad_right
+            );
 
-            double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-            double frontLeftPower = (y + x + rx) / denominator;
-            double backLeftPower = (y - x + rx) / denominator;
-            double frontRightPower = (y - x - rx) / denominator;
-            double backRightPower = (y + x - rx) / denominator;
-
-            // Slow mode
-            if (gamepad1.left_trigger > 0.2) {
-                frontLeftPower *= 0.4;
-                backLeftPower *= 0.4;
-                frontRightPower *= 0.4;
-                backRightPower *= 0.4;
+            // ===== FLYWHEEL CONTROL =====
+            if (gamepad1.dpad_up) {
+                targetRPM += 25;
+                sleep(200);
+            } else if (gamepad1.dpad_down) {
+                targetRPM = Math.max(0, targetRPM - 25);
+                sleep(200);
             }
 
-            frontLeftMotor.setPower(frontLeftPower);
-            backLeftMotor.setPower(backLeftPower);
-            frontRightMotor.setPower(frontRightPower);
-            backRightMotor.setPower(backRightPower);
-
-            // ===== LIMELIGHT TURRET LOCK =====
-            LLResult result = limelight.getLatestResult();
-            if (result != null && result.isValid()) {
-                double tx = result.getTx();
-                double power = -kP * tx;
-                rotationMotor.setPower(Math.max(-maxPower, Math.min(maxPower, power)));
-            } else {
-                rotationMotor.setPower(0);
-            }
-
-            // ===== FLYWHEEL CONTROL (RPM ONLY) =====
             if (gamepad1.right_trigger > 0.1) {
-                flywheel.setRPM(targetRPM); // ← use setRPM() instead of setTargetRPM()
+                flywheel.setTargetRPM(targetRPM);
             } else if (gamepad1.left_trigger > 0.1) {
                 flywheel.stop();
             }
 
+            // Hood control
+            if (gamepad1.y) flywheel.openHood();
+            if (gamepad1.x) flywheel.closeHood();
+            if (gamepad1.right_bumper) {
+                hoodPos = Math.min(1.0, flywheel.getHoodPosition() + 0.02);
+                flywheel.setHoodPosition(hoodPos);
+                sleep(150);
+            } else if (gamepad1.left_bumper) {
+                hoodPos = Math.max(0.0, flywheel.getHoodPosition() - 0.02);
+                flywheel.setHoodPosition(hoodPos);
+                sleep(150);
+            }
 
-            // ===== HOOD CONTROL =====
-            if (gamepad1.x) flywheel.openHood();
-            if (gamepad1.y) flywheel.closeHood();
-            if (gamepad1.right_bumper) flywheel.setHoodPosition(flywheel.getHoodPosition() + 0.02);
-            if (gamepad1.left_bumper) flywheel.setHoodPosition(flywheel.getHoodPosition() - 0.02);
+            // ===== APRILTAG TURRET CONTROL =====
+            if (gamepad1.a) {
+                aprilTagMode = !aprilTagMode; // toggle tracking
+                sleep(300);
+            }
+
+            if (aprilTagMode) {
+                turret.update(); // track tag
+            } else {
+                turret.stop();
+            }
 
             // ===== TELEMETRY =====
-            telemetry.addData("Drive", "Y: %.2f  X: %.2f  RX: %.2f", y, x, rx);
             telemetry.addData("Target RPM", targetRPM);
-            telemetry.addData("Actual RPM", flywheel.getAverageVelocity()); // optional feedback
+            telemetry.addData("Flywheel Velocity", flywheel.getAverageVelocity());
             telemetry.addData("Hood Position", flywheel.getHoodPosition());
             telemetry.update();
         }
 
-        // Stop everything safely
-        frontLeftMotor.setPower(0);
-        backLeftMotor.setPower(0);
-        frontRightMotor.setPower(0);
-        backRightMotor.setPower(0);
-        rotationMotor.setPower(0);
+        // ===== STOP EVERYTHING =====
+        drive.stop();
+        turret.stop();
         flywheel.stop();
     }
 }

@@ -3,20 +3,16 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Flywheel {
-    private DcMotorEx low;
-    private DcMotorEx high;
-    private Servo hoodServo;
 
-    private static final PIDFCoefficients PIDF_COEFFS = new PIDFCoefficients(10.0, 3.0, 0.0, 12.0);
+    private final DcMotorEx low;
+    private final DcMotorEx high;
+    private final Servo hoodServo;
+
     private static final double HOOD_CLOSED = 0.0;
     private static final double HOOD_OPEN = 0.8;
-
-    // Adjust this for your specific motor
-    private static final double TICKS_PER_REV = 28.0;
 
     public Flywheel(HardwareMap hardwareMap) {
         low = hardwareMap.get(DcMotorEx.class, "low");
@@ -28,40 +24,32 @@ public class Flywheel {
         low.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         high.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
-        low.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        high.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-
         low.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         high.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-
-        low.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, PIDF_COEFFS);
-        high.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, PIDF_COEFFS);
 
         hoodServo = hardwareMap.get(Servo.class, "hood");
         hoodServo.scaleRange(0.0, 1.0);
     }
 
-    /** Flywheel control in RPM */
-    public void setRPM(double rpm) {
-        double targetVelocity = (rpm * TICKS_PER_REV) / 60.0; // convert rpm → ticks/sec
-        low.setVelocity(targetVelocity);
-        high.setVelocity(targetVelocity);
-    }
-
-    public void setPower(double power) {
-        low.setPower(power);
-        high.setPower(power);
+    /** Spin flywheel to a target RPM */
+    public void setTargetRPM(double rpm) {
+        // Convert RPM to ticks/sec
+        double ticksPerRev = low.getMotorType().getTicksPerRev();
+        double velocity = (rpm * ticksPerRev) / 60.0;
+        low.setVelocity(velocity);
+        high.setVelocity(velocity);
     }
 
     public void stop() {
-        setPower(0);
+        low.setPower(0);
+        high.setPower(0);
     }
 
     public double getAverageVelocity() {
         return (low.getVelocity() + high.getVelocity()) / 2.0;
     }
 
-    /** Hood control */
+    /** Hood controls */
     public void openHood() {
         hoodServo.setPosition(HOOD_OPEN);
     }
@@ -70,8 +58,8 @@ public class Flywheel {
         hoodServo.setPosition(HOOD_CLOSED);
     }
 
-    public void setHoodPosition(double position) {
-        hoodServo.setPosition(position);
+    public void setHoodPosition(double pos) {
+        hoodServo.setPosition(pos);
     }
 
     public double getHoodPosition() {
