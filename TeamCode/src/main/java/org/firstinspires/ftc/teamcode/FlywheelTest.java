@@ -1,66 +1,54 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Gamepad;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
-@TeleOp(name = "Flywheel + Hood Tuning", group = "Testing")
-public class FlywheelTest extends LinearOpMode {
+public class FlywheelTest {
 
-    @Override
-    public void runOpMode() throws InterruptedException {
-        Flywheel flywheel = new Flywheel(hardwareMap);
+    private final Flywheel flywheel;
+    private final Telemetry telemetry;
+    private double targetRPM = 0;
+    private double hoodPos;
 
-        double targetRPM = 0; // starting RPM
-        double hoodPos = flywheel.getHoodPosition();
+    public FlywheelTest(HardwareMap hardwareMap, Telemetry telemetry) {
+        this.flywheel = new Flywheel(hardwareMap);
+        this.telemetry = telemetry;
+        this.hoodPos = flywheel.getHoodPosition();
+    }
 
-        telemetry.addLine("Flywheel + Hood initialized.");
-        telemetry.addLine("Controls:");
-        telemetry.addLine("Right Trigger: Spin Flywheel");
-        telemetry.addLine("Left Trigger: Stop Flywheel");
-        telemetry.addLine("D-Pad Up/Down: Adjust Target RPM ±100");
-        telemetry.addLine("X / Y: Open / Close Hood");
-        telemetry.addLine("RB / LB: Fine-tune Hood ±0.02");
-        telemetry.addLine("A: Print constants");
-        telemetry.update();
-
-        waitForStart();
-
-        while (opModeIsActive()) {
-            // --- Adjust Target RPM ---
-            if (gamepad1.dpad_up) {
-                targetRPM += 25;
-                sleep(200); // debounce
-            } else if (gamepad1.dpad_down) {
-                targetRPM -= 25;
-                if (targetRPM < 0) targetRPM = 0;
-                sleep(200);
-            }
-
-            // --- Flywheel Control ---
-            if (gamepad1.right_trigger > 0.1) {
-                // Assuming setTargetRPM is implemented in Flywheel.java
-                flywheel.setTargetRPM(targetRPM);
-            } else if (gamepad1.left_trigger > 0.1) {
-                flywheel.stop();
-            }
-
-            // Print constants
-            if (gamepad1.a) {
-                telemetry.addLine("=== Current Constants ===");
-                telemetry.addData("Target RPM", targetRPM);
-                telemetry.addData("Hood Pos", hoodPos);
-                telemetry.addData("Avg Velocity", flywheel.getAverageVelocity());
-                telemetry.update();
-                sleep(300);
-            }
-
-            // Always update live telemetry
-            telemetry.addData("Target RPM", targetRPM);
-            telemetry.addData("Current Velocity", flywheel.getAverageVelocity());
-            telemetry.addData("Hood Position", hoodPos);
-            telemetry.update();
+    public void update(Gamepad gamepad1) {
+        // --- Adjust Target RPM ---
+        if (gamepad1.dpad_up) {
+            targetRPM += 25;
+        } else if (gamepad1.dpad_down) {
+            targetRPM -= 25;
+            if (targetRPM < 0) targetRPM = 0;
         }
 
+        // --- Flywheel Control ---
+        if (gamepad1.right_trigger > 0.1) {
+            flywheel.setTargetRPM(targetRPM);
+        } else if (gamepad1.left_trigger > 0.1) {
+            flywheel.stop();
+        }
+
+        // --- Hood Control ---
+        if (gamepad1.x) flywheel.openHood();
+        if (gamepad1.y) flywheel.closeHood();
+        if (gamepad1.right_bumper)
+            flywheel.setHoodPosition(flywheel.getHoodPosition() + 0.02);
+        if (gamepad1.left_bumper)
+            flywheel.setHoodPosition(flywheel.getHoodPosition() - 0.02);
+
+        // --- Telemetry ---
+        telemetry.addData("Target RPM", targetRPM);
+        telemetry.addData("Current Velocity", flywheel.getAverageVelocity());
+        telemetry.addData("Hood Position", flywheel.getHoodPosition());
+        telemetry.update();
+    }
+
+    public void stop() {
         flywheel.stop();
     }
 }
