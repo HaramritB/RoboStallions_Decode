@@ -13,7 +13,7 @@ public class CombinedTeleOp extends LinearOpMode {
         MecanumTeleOpAxisLocked drive = new MecanumTeleOpAxisLocked(hardwareMap, telemetry);
         AprilTagTracking turret = new AprilTagTracking(hardwareMap, telemetry);
         Flywheel flywheel = new Flywheel(hardwareMap);
-        Intake intake = new Intake(hardwareMap);   // ✅ Intake subsystem
+        Intake intake = new Intake(hardwareMap); // ✅ Intake helper
 
         double targetRPM = 0;
         double hoodPos = flywheel.getHoodPosition();
@@ -65,8 +65,11 @@ public class CombinedTeleOp extends LinearOpMode {
             }
 
             // ===== APRILTAG TURRET CONTROL =====
-            if (gamepad1.a) {
-                aprilTagMode = !aprilTagMode; // toggle tracking
+            if (gamepad1.a && !aprilTagMode) {
+                aprilTagMode = true;
+                sleep(300);
+            } else if (gamepad1.a && aprilTagMode) {
+                aprilTagMode = false;
                 sleep(300);
             }
 
@@ -76,25 +79,15 @@ public class CombinedTeleOp extends LinearOpMode {
                 turret.stop();
             }
 
-            if (gamepad2.right_trigger > 0.1) {
-                intake.startIntake();
-            } else if (gamepad2.left_trigger > 0.1) {
-                intake.eject();
-            } else if (gamepad2.b) {
-                intake.retract();
-            } else if (gamepad2.a) {
-                intake.deploy();
-            } else {
-                intake.stop();
-            }
+            // ===== INTAKE CONTROL =====
+            intake.update(gamepad1);
 
             // ===== TELEMETRY =====
             telemetry.addData("Target RPM", targetRPM);
             telemetry.addData("Flywheel Velocity", flywheel.getAverageVelocity());
             telemetry.addData("Hood Position", flywheel.getHoodPosition());
-            telemetry.addData("Intake Power", intake.getMotorPower());
-            telemetry.addData("Intake Servo", intake.getServoPosition());
-            telemetry.addData("Has Artifact", intake.hasArtifact());
+            telemetry.addData("Intake Running", intake.isRunning());
+            telemetry.addData("Intake Motor Power", intake.getMotorPower());
             telemetry.update();
         }
 
@@ -102,6 +95,6 @@ public class CombinedTeleOp extends LinearOpMode {
         drive.stop();
         turret.stop();
         flywheel.stop();
-        intake.stop();
+        intake.stop(); // stop intake safely
     }
 }

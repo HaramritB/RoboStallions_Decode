@@ -22,34 +22,49 @@ public class MecanumTeleOpAxisLocked {
         frontRightMotor = hardwareMap.get(DcMotor.class, "frontright");
         backRightMotor = hardwareMap.get(DcMotor.class, "backright");
 
-        // Reverse right side (adjust if reversed for your setup)
+        // Reverse right side for mecanum
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        // Left side stays FORWARD
+        frontLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
+    /**
+     * y = forward/backward (-1 to 1)
+     * x = left/right (-1 to 1)
+     * rx = rotation (-1 to 1)
+     */
     public void drive(double y, double x, double rx, boolean dpadUp, boolean dpadDown, boolean dpadLeft, boolean dpadRight) {
-        // Remember, Y stick value is reversed
+        // Invert y because joystick forward is negative
         y = -y;
-        x = -x * 1.1; // Counteract imperfect strafing
-        rx = -rx;
+        // Slightly scale x to fix imperfect strafing
+        x = x * 1.1;
 
-        // --- D-pad overrides for precise movement ---
-        if (dpadUp) y = -0.5;
-        if (dpadDown) y = 0.5;
-        if (dpadRight) x = -0.5;
-        if (dpadLeft) x = 0.5;
+        // Rotation inverted if needed
+        rx = rx;
 
-        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-        double frontLeftPower = ((y + x + rx) / denominator) * 0.5;
-        double backLeftPower = ((y - x + rx) / denominator) * 0.5;
-        double frontRightPower = ((y - x - rx) / denominator) * 0.5;
-        double backRightPower = ((y + x - rx) / denominator) * 0.5;
+        // D-pad overrides (precision driving)
+        if (dpadUp) y = 0.5;
+        if (dpadDown) y = -0.5;
+        if (dpadRight) x = 0.5;
+        if (dpadLeft) x = -0.5;
 
+        // Calculate motor powers
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
+        double frontLeftPower = (y + x + rx) / denominator;
+        double backLeftPower = (y - x + rx) / denominator;
+        double frontRightPower = (y - x - rx) / denominator;
+        double backRightPower = (y + x - rx) / denominator;
+
+        // Set motor powers
         frontLeftMotor.setPower(frontLeftPower);
         backLeftMotor.setPower(backLeftPower);
         frontRightMotor.setPower(frontRightPower);
         backRightMotor.setPower(backRightPower);
 
+        // Telemetry
         telemetry.addData("FL", frontLeftPower);
         telemetry.addData("FR", frontRightPower);
         telemetry.addData("BL", backLeftPower);
