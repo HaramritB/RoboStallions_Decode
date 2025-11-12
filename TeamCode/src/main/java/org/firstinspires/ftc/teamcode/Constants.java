@@ -55,8 +55,8 @@ public class Constants {
             .xVelocity(72.77)
             .yVelocity(64.99);
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(2.56) // 3.54
-            .strafePodX(3.54)
+            .forwardPodY(3.54)
+            .strafePodX(2.56)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)

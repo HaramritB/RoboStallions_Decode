@@ -13,16 +13,15 @@ public class CombinedTeleOp extends LinearOpMode {
         MecanumTeleOpAxisLocked drive = new MecanumTeleOpAxisLocked(hardwareMap, telemetry);
         AprilTagTracking turret = new AprilTagTracking(hardwareMap, telemetry);
         Flywheel flywheel = new Flywheel(hardwareMap);
+        Intake intake = new Intake(hardwareMap);   // ✅ Intake subsystem
 
         double targetRPM = 0;
         double hoodPos = flywheel.getHoodPosition();
+        boolean aprilTagMode = false;
 
         telemetry.addLine("Combined TeleOp Initialized");
         telemetry.update();
-
         waitForStart();
-
-        boolean aprilTagMode = false;
 
         while (opModeIsActive()) {
 
@@ -77,10 +76,25 @@ public class CombinedTeleOp extends LinearOpMode {
                 turret.stop();
             }
 
+            if (gamepad2.right_trigger > 0.1) {
+                intake.startIntake();
+            } else if (gamepad2.left_trigger > 0.1) {
+                intake.eject();
+            } else if (gamepad2.b) {
+                intake.retract();
+            } else if (gamepad2.a) {
+                intake.deploy();
+            } else {
+                intake.stop();
+            }
+
             // ===== TELEMETRY =====
             telemetry.addData("Target RPM", targetRPM);
             telemetry.addData("Flywheel Velocity", flywheel.getAverageVelocity());
             telemetry.addData("Hood Position", flywheel.getHoodPosition());
+            telemetry.addData("Intake Power", intake.getMotorPower());
+            telemetry.addData("Intake Servo", intake.getServoPosition());
+            telemetry.addData("Has Artifact", intake.hasArtifact());
             telemetry.update();
         }
 
@@ -88,5 +102,6 @@ public class CombinedTeleOp extends LinearOpMode {
         drive.stop();
         turret.stop();
         flywheel.stop();
+        intake.stop();
     }
 }

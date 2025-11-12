@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class IntakeSubsystem {
+
+public class Intake {
     
     private DcMotor intakeMotor;
     private Servo intakeServo;
@@ -19,7 +21,7 @@ public class IntakeSubsystem {
     
     private boolean isRunning = false;
     
-    public IntakeSubsystem(HardwareMap hardwareMap) {
+    public Intake(HardwareMap hardwareMap) {
         intakeMotor = hardwareMap.get(DcMotor.class, "intake");
         intakeServo = hardwareMap.get(Servo.class, "kicker");
         
@@ -65,7 +67,7 @@ public class IntakeSubsystem {
         intakeServo.setPosition(servoUp);
         stop();
     }
-    
+
     public void deploy() {
         intakeServo.setPosition(servoDown);
     }
