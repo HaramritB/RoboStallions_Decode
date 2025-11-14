@@ -25,9 +25,6 @@ public class Intake {
         if (gamepad.x) {
             intakeMotor.setPower(intakePower);
             isRunning = true;
-        } else if (gamepad.y) {
-            intakeMotor.setPower(ejectPower);
-            isRunning = true;
         } else if (gamepad.b) {
             intakeMotor.setPower(0);
             isRunning = false;

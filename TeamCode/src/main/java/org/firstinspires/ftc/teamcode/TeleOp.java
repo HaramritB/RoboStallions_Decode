@@ -13,9 +13,10 @@ public class TeleOp extends LinearOpMode {
         AprilTagTracking turret = new AprilTagTracking(hardwareMap, telemetry);
         Flywheel flywheel = new Flywheel(hardwareMap);
         Intake intake = new Intake(hardwareMap);
+        Kicker kicker = new Kicker(hardwareMap);
 
         double targetRPM = 0;
-        double hoodPos = flywheel.getHoodPosition();
+        // double hoodPos = flywheel.getHoodPosition();
         boolean aprilTagMode = false;
         boolean aPressedLast = false;
 
@@ -52,8 +53,8 @@ public class TeleOp extends LinearOpMode {
                 flywheel.stop();
             }
 
-            // Hood control
-            if (gamepad1.y) flywheel.openHood();
+            /* Hood control
+            if (gamepad1.y) flywheel.closeHood();
             if (gamepad1.x) flywheel.closeHood();
             if (gamepad1.right_bumper) {
                 hoodPos = Math.min(1.0, flywheel.getHoodPosition() + 0.02);
@@ -63,7 +64,7 @@ public class TeleOp extends LinearOpMode {
                 hoodPos = Math.max(0.0, flywheel.getHoodPosition() - 0.02);
                 flywheel.setHoodPosition(hoodPos);
                 sleep(150);
-            }
+            } */
 
             // ===== APRILTAG TURRET CONTROL =====
             boolean aPressedNow = gamepad1.a;
@@ -84,6 +85,11 @@ public class TeleOp extends LinearOpMode {
             // ===== INTAKE CONTROL =====
             intake.update(gamepad1);
 
+
+            //  ===== KICKER CONTROL =====
+
+            kicker.update(gamepad1);
+
             // ===== TELEMETRY =====
             telemetry.addLine("--- TELEOP STATUS ---");
             telemetry.addData("Target RPM", targetRPM);
@@ -92,6 +98,7 @@ public class TeleOp extends LinearOpMode {
             telemetry.addData("Intake Running", intake.isRunning());
             telemetry.addData("Intake Motor Power", intake.getMotorPower());
             telemetry.addData("AprilTag Mode", aprilTagMode ? "Tracking" : "Manual");
+            // telemetry.addData("Servo Position", kickerServo.getPosition());
             telemetry.update();
         }
 
