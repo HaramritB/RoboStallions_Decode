@@ -2,13 +2,13 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "CombinedTeleOp", group = "Competition")
+@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOp", group = "Competition")
 public class TeleOp extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        // ===== Initialize subsystems =====
+        // ===== Subsystems =====
         MecanumDrive drive = new MecanumDrive(hardwareMap, telemetry);
         AprilTagTracking turret = new AprilTagTracking(hardwareMap, telemetry);
         Flywheel flywheel = new Flywheel(hardwareMap);
@@ -16,93 +16,98 @@ public class TeleOp extends LinearOpMode {
         Kicker kicker = new Kicker(hardwareMap);
 
         double targetRPM = 0;
-        // double hoodPos = flywheel.getHoodPosition();
         boolean aprilTagMode = false;
         boolean aPressedLast = false;
+        boolean flywheelToggleLast = false;
+        double RPM_STEP = 10;
 
-        telemetry.addLine("Combined TeleOp Initialized");
+        telemetry.addLine("TeleOp Initialized");
         telemetry.update();
         waitForStart();
 
         while (opModeIsActive()) {
 
-            // ===== DRIVE CONTROL =====
-
+            // -----------------------------
+            // DRIVE CONTROL
+            // -----------------------------
             drive.drive(
                     gamepad1.left_stick_y,
                     gamepad1.left_stick_x,
                     gamepad1.right_stick_x,
-                    false, // dpad_up (disabled)
-                    false, // dpad_down (disabled)
+                    false,
+                    false,
                     gamepad1.dpad_left,
                     gamepad1.dpad_right
             );
 
-            // ===== FLYWHEEL CONTROL (uses D-pad up/down) =====
-            if (gamepad1.dpad_up) {
-                targetRPM += 25;
-                sleep(200);
-            } else if (gamepad1.dpad_down) {
-                targetRPM = Math.max(0, targetRPM - 25);
-                sleep(200);
-            }
-
-            if (gamepad1.right_trigger > 0.1) {
-                flywheel.setTargetRPM(targetRPM);
-            } else if (gamepad1.left_trigger > 0.1) {
-                flywheel.stop();
-            }
-
-            /* Hood control
-            if (gamepad1.y) flywheel.closeHood();
-            if (gamepad1.x) flywheel.closeHood();
-            if (gamepad1.right_bumper) {
-                hoodPos = Math.min(1.0, flywheel.getHoodPosition() + 0.02);
-                flywheel.setHoodPosition(hoodPos);
+            // -----------------------------
+            // FLYWHEEL CONTROL
+            // -----------------------------
+            if (gamepad1.right_trigger > 0.5) {
+                targetRPM += RPM_STEP;
                 sleep(150);
-            } else if (gamepad1.left_bumper) {
-                hoodPos = Math.max(0.0, flywheel.getHoodPosition() - 0.02);
-                flywheel.setHoodPosition(hoodPos);
+            }
+            if (gamepad1.left_trigger > 0.5) {
+                targetRPM -= RPM_STEP;
+                if (targetRPM < 0) targetRPM = 0;
                 sleep(150);
-            } */
+            }
+            if (gamepad1.left_stick_button) {
+                targetRPM = 0;
+            }
+            flywheel.setTargetRPM(targetRPM);
 
-            // ===== APRILTAG TURRET CONTROL =====
+            boolean flywheelToggle = gamepad1.right_stick_button;
+            if (flywheelToggle && !flywheelToggleLast) {
+                flywheel.toggleHood();
+            }
+            flywheelToggleLast = flywheelToggle;
+
+            double currentRPM = (flywheel.getAverageVelocity() / flywheel.getTicksPerRev()) * 60.0;
+
+            // -----------------------------
+            // APRILTAG TURRET CONTROL
+            // -----------------------------
             boolean aPressedNow = gamepad1.a;
-
-            // Toggle AprilTag mode only once per press (edge detection)
             if (aPressedNow && !aPressedLast) {
                 aprilTagMode = !aprilTagMode;
             }
             aPressedLast = aPressedNow;
 
-            if (aprilTagMode) {
-                turret.update();  // auto-tracking or return to 0°
-            } else {
-                double manualPower = gamepad1.right_stick_x * 0.4;
+            double manualPower = 0;
+            if (gamepad1.right_bumper) manualPower = -0.4; // right
+            if (gamepad1.left_bumper)  manualPower = 0.4;  // left
+
+            if (manualPower != 0) {
                 turret.setManualPower(manualPower);
+            } else if (aprilTagMode) {
+                turret.update();
+            } else {
+                turret.setManualPower(0);
             }
 
-            // ===== INTAKE CONTROL =====
+            // -----------------------------
+            // INTAKE & KICKER
+            // -----------------------------
             intake.update(gamepad1);
-
-
-            //  ===== KICKER CONTROL =====
-
             kicker.update(gamepad1);
 
-            // ===== TELEMETRY =====
+            // -----------------------------
+            // TELEMETRY
+            // -----------------------------
             telemetry.addLine("--- TELEOP STATUS ---");
             telemetry.addData("Target RPM", targetRPM);
-            telemetry.addData("Flywheel Velocity", flywheel.getAverageVelocity());
+            telemetry.addData("Current RPM", String.format("%.1f", currentRPM));
             telemetry.addData("Hood Position", flywheel.getHoodPosition());
             telemetry.addData("Intake Running", intake.isRunning());
             telemetry.addData("Intake Motor Power", intake.getMotorPower());
             telemetry.addData("AprilTag Mode", aprilTagMode ? "Tracking" : "Manual");
-            // telemetry.addData("Servo Position", kickerServo.getPosition());
             telemetry.update();
         }
 
-        // ===== STOP EVERYTHING =====
+        // -----------------------------
+        // STOP EVERYTHING
+        // -----------------------------
         drive.stop();
         turret.stop();
         flywheel.stop();

@@ -12,30 +12,17 @@ public class AprilTagTracking {
     private final DcMotor rotationMotor;
     private final Telemetry telemetry;
 
-    // PID constants
+    // PID / proportional control
     private final double kP = 0.03;
-    private final double kI = 0.0;
-    private final double kD = 0.002;
+    private final double maxPower = 0.75;
 
-    private double integral = 0;
-    private double lastError = 0;
-
-    private final double maxPower = 0.5;
-
-    // Turret rotation limits
-    private final double maxAngle = 180;
-    private final double minAngle = -180;
-    private double cumulativeAngle = 0;
-    private int lastEncoderPos = 0;
-
-    private final double ticksPerDegree = 7.11;
-
-    // Low-pass filter for tx
+    // Low-pass filter
+    private final double alpha = 0.4;
     private double filteredTx = 0;
-    private final double alpha = 0.3;
+    private boolean firstReading = true;
 
-    // Faster return factor
-    private final double returnMultiplier = 1.5;
+    // Deadband to ignore small errors
+    private final double deadband = 0.5;
 
     public AprilTagTracking(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -44,93 +31,67 @@ public class AprilTagTracking {
         rotationMotor = hardwareMap.get(DcMotor.class, "rotation");
         rotationMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        // Configure pipeline for AprilTag detection
         limelight.pipelineSwitch(7);
         limelight.start();
-
-        lastEncoderPos = rotationMotor.getCurrentPosition();
     }
 
+    /** Call this in your TeleOp loop when auto-tracking is enabled */
     public void update() {
-        // Update cumulative angle
-        int currentEncoder = rotationMotor.getCurrentPosition();
-        double deltaDegrees = (currentEncoder - lastEncoderPos) / ticksPerDegree;
-        cumulativeAngle += deltaDegrees;
-        lastEncoderPos = currentEncoder;
-
-        // Clamp cumulative angle
-        cumulativeAngle = Math.max(minAngle, Math.min(maxAngle, cumulativeAngle));
-
         LLResult result = limelight.getLatestResult();
-        double power;
+
+        double tx = 0;
+        boolean valid = false;
 
         if (result != null && result.isValid()) {
-            // Track AprilTag
-            double tx = result.getTx();
-            filteredTx = alpha * tx + (1 - alpha) * filteredTx;
+            tx = result.getTx();
+            valid = true;
 
-            double error = filteredTx;
-            integral += error;
-            double derivative = error - lastError;
-            power = kP * error + kI * integral + kD * derivative;
-            lastError = error;
+            // Low-pass filter
+            if (firstReading) {
+                filteredTx = tx;
+                firstReading = false;
+            } else {
+                filteredTx = alpha * tx + (1 - alpha) * filteredTx;
+            }
 
-            // Clamp power and apply soft stop near limits
-            double softLimitFactor = getSoftLimitFactor();
-            power = Math.max(-maxPower, Math.min(maxPower, power)) * softLimitFactor;
+            // Deadband
+            if (Math.abs(filteredTx) < deadband) filteredTx = 0;
 
-            telemetry.addLine("Tracking AprilTag");
-            telemetry.addData("tx", tx);
+            // Compute power
+            double power = -kP * filteredTx;
+            power = clamp(power, -maxPower, maxPower);
+
+            rotationMotor.setPower(power);
+
+            telemetry.addLine("Auto Tracking");
+            telemetry.addData("Raw tx", tx);
+            telemetry.addData("Filtered tx", filteredTx);
+            telemetry.addData("Motor Power", power);
 
         } else {
-            // No tag → return to 0° smoothly
-            double error = -cumulativeAngle; // target = 0°
-            integral += error;
-            double derivative = error - lastError;
-            power = kP * error + kI * integral + kD * derivative;
-            lastError = error;
-
-            // Apply faster return multiplier
-            power *= returnMultiplier;
-
-            // Soft stop near limits
-            double softLimitFactor = getSoftLimitFactor();
-            power *= softLimitFactor;
-
-            // Stop if within threshold
-            if (Math.abs(cumulativeAngle) < 1.0) power = 0;
-
-            telemetry.addLine("No valid AprilTag → returning to 0°");
+            rotationMotor.setPower(0);
+            firstReading = true;
+            telemetry.addLine("No Tag Detected");
         }
 
-        rotationMotor.setPower(power);
-
-        telemetry.addData("Motor Power", power);
-        telemetry.addData("Cumulative Angle", cumulativeAngle);
         telemetry.update();
     }
 
-    // Soft stop factor: reduces power near ±180° for smoother motion
-    private double getSoftLimitFactor() {
-        double buffer = 20; // degrees before hard stop to start reducing power
-        double factor = 1.0;
-
-        if (cumulativeAngle > maxAngle - buffer) {
-            factor = Math.max(0, (maxAngle - cumulativeAngle) / buffer);
-        } else if (cumulativeAngle < minAngle + buffer) {
-            factor = Math.max(0, (cumulativeAngle - minAngle) / buffer);
-        }
-
-        return factor;
+    /** Manual control for turret (e.g., RB/LB) */
+    public void setManualPower(double power) {
+        rotationMotor.setPower(clamp(power, -maxPower, maxPower));
+        firstReading = true; // reset filtered value when manual control is used
     }
 
+    /** Stop turret immediately */
     public void stop() {
         rotationMotor.setPower(0);
+        firstReading = true;
     }
 
-    // Manual control when AprilTag mode is off
-    public void setManualPower(double power) {
-        double softLimitFactor = getSoftLimitFactor();
-        power *= softLimitFactor;
-        rotationMotor.setPower(power);
+    /** Utility clamp method */
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 }
