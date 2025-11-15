@@ -14,6 +14,8 @@ public class Flywheel {
     private static final double HOOD_CLOSED = 0.0;
     private static final double HOOD_OPEN = 0.8;
 
+    private boolean hoodOpen = false;
+
     public Flywheel(HardwareMap hardwareMap) {
         low = hardwareMap.get(DcMotorEx.class, "low");
         high = hardwareMap.get(DcMotorEx.class, "high");
@@ -31,9 +33,7 @@ public class Flywheel {
         hoodServo.scaleRange(0.0, 1.0);
     }
 
-    /** Spin flywheel to a target RPM */
     public void setTargetRPM(double rpm) {
-        // Convert RPM to ticks/sec
         double ticksPerRev = low.getMotorType().getTicksPerRev();
         double velocity = (rpm * ticksPerRev) / 60.0;
         low.setVelocity(velocity);
@@ -49,17 +49,23 @@ public class Flywheel {
         return (low.getVelocity() + high.getVelocity()) / 2.0;
     }
 
-    /** Hood controls */
+    public double getTicksPerRev() {
+        return low.getMotorType().getTicksPerRev();
+    }
+
     public void openHood() {
         hoodServo.setPosition(HOOD_OPEN);
+        hoodOpen = true;
     }
 
     public void closeHood() {
         hoodServo.setPosition(HOOD_CLOSED);
+        hoodOpen = false;
     }
 
-    public void setHoodPosition(double pos) {
-        hoodServo.setPosition(pos);
+    public void toggleHood() {
+        if (hoodOpen) closeHood();
+        else openHood();
     }
 
     public double getHoodPosition() {
