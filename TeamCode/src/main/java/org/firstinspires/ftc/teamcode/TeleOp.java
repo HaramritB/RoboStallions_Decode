@@ -19,8 +19,11 @@ public class TeleOp extends LinearOpMode {
         // double hoodPos = flywheel.getHoodPosition();
         boolean aprilTagMode = false;
         boolean aPressedLast = false;
+        boolean rbPressedLast = false;
 
-        telemetry.addLine("Combined TeleOp Initialized");
+        double RPM_STEP = 10;
+
+        telemetry.addLine("TeleOp Initialized");
         telemetry.update();
         waitForStart();
 
@@ -39,32 +42,37 @@ public class TeleOp extends LinearOpMode {
             );
 
             // ===== FLYWHEEL CONTROL (uses D-pad up/down) =====
-            if (gamepad1.dpad_up) {
-                targetRPM += 25;
-                sleep(200);
-            } else if (gamepad1.dpad_down) {
-                targetRPM = Math.max(0, targetRPM - 25);
-                sleep(200);
+            // Increase RPM
+            if (gamepad1.right_trigger > 0.5) {
+                targetRPM += RPM_STEP;
+                sleep(150);
             }
 
-            if (gamepad1.right_trigger > 0.1) {
-                flywheel.setTargetRPM(targetRPM);
-            } else if (gamepad1.left_trigger > 0.1) {
-                flywheel.stop();
+            // Decrease RPM
+            if (gamepad1.left_trigger > 0.5) {
+                targetRPM -= RPM_STEP;
+                if (targetRPM < 0) targetRPM = 0;
+                sleep(150);
             }
 
-            /* Hood control
-            if (gamepad1.y) flywheel.closeHood();
-            if (gamepad1.x) flywheel.closeHood();
-            if (gamepad1.right_bumper) {
-                hoodPos = Math.min(1.0, flywheel.getHoodPosition() + 0.02);
-                flywheel.setHoodPosition(hoodPos);
-                sleep(150);
-            } else if (gamepad1.left_bumper) {
-                hoodPos = Math.max(0.0, flywheel.getHoodPosition() - 0.02);
-                flywheel.setHoodPosition(hoodPos);
-                sleep(150);
-            } */
+            // LB resets RPM instantly
+            if (gamepad1.left_bumper) {
+                targetRPM = 0;
+            }
+
+            // Apply new RPM
+            flywheel.setTargetRPM(targetRPM);
+
+            // RB toggles hood
+            boolean rb = gamepad1.right_bumper;
+            if (rb && !rbPressedLast) {
+                flywheel.toggleHood();
+            }
+            rbPressedLast = rb;
+
+            // Display current RPM
+            double currentRPM =
+                    (flywheel.getAverageVelocity() / flywheel.getTicksPerRev()) * 60.0;
 
             // ===== APRILTAG TURRET CONTROL =====
             boolean aPressedNow = gamepad1.a;
@@ -87,7 +95,6 @@ public class TeleOp extends LinearOpMode {
 
 
             //  ===== KICKER CONTROL =====
-
             kicker.update(gamepad1);
 
             // ===== TELEMETRY =====
@@ -99,6 +106,9 @@ public class TeleOp extends LinearOpMode {
             telemetry.addData("Intake Motor Power", intake.getMotorPower());
             telemetry.addData("AprilTag Mode", aprilTagMode ? "Tracking" : "Manual");
             // telemetry.addData("Servo Position", kickerServo.getPosition());
+            telemetry.addData("Target RPM", targetRPM);
+            telemetry.addData("Current RPM", String.format("%.1f", currentRPM));
+            telemetry.addData("Hood Position", flywheel.getHoodPosition());
             telemetry.update();
         }
 
