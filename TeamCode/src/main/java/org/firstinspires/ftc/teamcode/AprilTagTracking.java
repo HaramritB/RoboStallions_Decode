@@ -12,132 +12,86 @@ public class AprilTagTracking {
     private final DcMotor rotationMotor;
     private final Telemetry telemetry;
 
-    private final double kP = 0.015;
-    private final double kI = 0.000;
-    private final double kD = 0.0015;
+    // PID / proportional control
+    private final double kP = 0.03;
+    private final double maxPower = 0.75;
 
-    private double integral = 0;
-    private double lastError = 0;
-
-    private final double maxPower = 0.45;
-    private final double maxAngle = 180;
-    private final double minAngle = -180;
-
-    private final double ticksPerDegree = 7.11;
-    private int lastEncoderPos = 0;
-    private double turretAngle = 0;     // filtered, stable angle
-
-    private final double alpha = 0.5;   // higher = sharper
+    // Low-pass filter
+    private final double alpha = 0.4;
     private double filteredTx = 0;
+    private boolean firstReading = true;
+
+    // Deadband to ignore small errors
+    private final double deadband = 0.5;
 
     public AprilTagTracking(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
 
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         rotationMotor = hardwareMap.get(DcMotor.class, "rotation");
-
         rotationMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        // Make sure this is an AprilTag pipeline
-        limelight.pipelineSwitch(0);
+        // Configure pipeline for AprilTag detection
+        limelight.pipelineSwitch(7);
         limelight.start();
-
-        lastEncoderPos = rotationMotor.getCurrentPosition();
     }
 
+    /** Call this in your TeleOp loop when auto-tracking is enabled */
     public void update() {
-        updateTurretAngle();
-
         LLResult result = limelight.getLatestResult();
-        double power;
+
+        double tx = 0;
+        boolean valid = false;
 
         if (result != null && result.isValid()) {
-            double tx = result.getTx();
+            tx = result.getTx();
+            valid = true;
 
             // Low-pass filter
-            filteredTx = alpha * tx + (1 - alpha) * filteredTx;
-
-            double error = filteredTx;
-
-            power = computePID(error);
-            power = clamp(power, -maxPower, maxPower);
-            power *= softLimitFactor();
-
-            telemetry.addLine("Tracking Tag");
-            telemetry.addData("Filtered Tx", filteredTx);
-
-        } else {
-            double error = -turretAngle;   // Target = 0°
-
-            power = computePID(error);
-            power = clamp(power, -maxPower * 0.8, maxPower * 0.8); // gentler return
-            power *= softLimitFactor();
-
-            // Stop if close to center
-            if (Math.abs(turretAngle) < 1.0) {
-                power = 0;
-                resetPID();
+            if (firstReading) {
+                filteredTx = tx;
+                firstReading = false;
+            } else {
+                filteredTx = alpha * tx + (1 - alpha) * filteredTx;
             }
 
-            telemetry.addLine("Returning to Zero (No Tag)");
+            // Deadband
+            if (Math.abs(filteredTx) < deadband) filteredTx = 0;
+
+            // Compute power
+            double power = -kP * filteredTx;
+            power = clamp(power, -maxPower, maxPower);
+
+            rotationMotor.setPower(power);
+
+            telemetry.addLine("Auto Tracking");
+            telemetry.addData("Raw tx", tx);
+            telemetry.addData("Filtered tx", filteredTx);
+            telemetry.addData("Motor Power", power);
+
+        } else {
+            rotationMotor.setPower(0);
+            firstReading = true;
+            telemetry.addLine("No Tag Detected");
         }
 
-        rotationMotor.setPower(power);
-
-        telemetry.addData("Power", power);
-        telemetry.addData("Turret Angle", turretAngle);
         telemetry.update();
     }
 
-    private double computePID(double error) {
-        integral += error;
-        double derivative = error - lastError;
-        lastError = error;
-
-        return kP * error + kI * integral + kD * derivative;
-    }
-
-    private void updateTurretAngle() {
-        int encoder = rotationMotor.getCurrentPosition();
-        int delta = encoder - lastEncoderPos;
-        lastEncoderPos = encoder;
-
-        turretAngle += delta / ticksPerDegree;
-
-        turretAngle = clamp(turretAngle, minAngle, maxAngle);
-    }
-
-    private double softLimitFactor() {
-        double buffer = 20;
-        if (turretAngle > maxAngle - buffer)
-            return Math.max(0, (maxAngle - turretAngle) / buffer);
-        if (turretAngle < minAngle + buffer)
-            return Math.max(0, (turretAngle - minAngle) / buffer);
-        return 1.0;
-    }
-
-    public void resetAngle() {
-        lastEncoderPos = rotationMotor.getCurrentPosition();
-        turretAngle = 0;
-    }
-
-    public void resetPID() {
-        integral = 0;
-        lastError = 0;
-        filteredTx = 0;
-    }
-
+    /** Manual control for turret (e.g., RB/LB) */
     public void setManualPower(double power) {
-        updateTurretAngle();
-        power = clamp(power * softLimitFactor(), -maxPower, maxPower);
-        rotationMotor.setPower(power);
+        rotationMotor.setPower(clamp(power, -maxPower, maxPower));
+        firstReading = true; // reset filtered value when manual control is used
     }
 
+    /** Stop turret immediately */
     public void stop() {
         rotationMotor.setPower(0);
+        firstReading = true;
     }
 
-    private double clamp(double v, double min, double max) {
-        return Math.max(min, Math.min(max, v));
+    /** Utility clamp method */
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 }
