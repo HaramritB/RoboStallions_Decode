@@ -30,13 +30,6 @@ public class FlywheelTest extends LinearOpMode {
                 sleep(150);
             }
 
-            // Decrease RPM
-            if (gamepad1.left_trigger > 0.5) {
-                targetRPM -= RPM_STEP;
-                if (targetRPM < 0) targetRPM = 0;
-                sleep(150);
-            }
-
             // LB resets RPM instantly
             if (gamepad1.left_bumper) {
                 targetRPM = 0;
