@@ -9,43 +9,48 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class AprilTagTracking {
 
     private final Limelight3A limelight;
-    private final DcMotor rotationMotor;
+    private final DcMotor turretMotor;
     private final Telemetry telemetry;
 
-    // PID / proportional control
-    private final double kP = 0.03;
-    private final double maxPower = 0.75;
+    // PID (Proportional only is fine for turret steering)
+    private final double kP = 0.05;
+    private final double maxPower = 0.6;
 
-    // Low-pass filter
-    private final double alpha = 0.4;
+    // Low-Pass Filter settings
+    private final double alpha = 0.15;   // smooth, decrease if oscillation happens
     private double filteredTx = 0;
     private boolean firstReading = true;
 
-    // Deadband to ignore small errors
-    private final double deadband = 0.5;
+    // Ignore very small noise
+    private final double deadband = 0.4;
+
+    // If no tag is seen for this long, turret stops
+    private long lastValidTime = 0;
+    private final long tagTimeout = 250; // ms
 
     public AprilTagTracking(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
 
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
-        rotationMotor = hardwareMap.get(DcMotor.class, "rotation");
-        rotationMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        turretMotor = hardwareMap.get(DcMotor.class, "rotation");
 
-        // Configure pipeline for AprilTag detection
+        turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        // Run AprilTag pipeline
         limelight.pipelineSwitch(7);
         limelight.start();
     }
 
-    /** Call this in your TeleOp loop when auto-tracking is enabled */
+    /** Call this every loop */
     public void update() {
         LLResult result = limelight.getLatestResult();
 
-        double tx = 0;
-        boolean valid = false;
+        boolean hasTag = result != null && result.isValid();
 
-        if (result != null && result.isValid()) {
-            tx = result.getTx();
-            valid = true;
+        if (hasTag) {
+            lastValidTime = System.currentTimeMillis();
+
+            double tx = result.getTx();
 
             // Low-pass filter
             if (firstReading) {
@@ -55,42 +60,50 @@ public class AprilTagTracking {
                 filteredTx = alpha * tx + (1 - alpha) * filteredTx;
             }
 
-            // Deadband
+            // Deadband small errors
             if (Math.abs(filteredTx) < deadband) filteredTx = 0;
 
-            // Compute power
+            // Proportional control
             double power = -kP * filteredTx;
             power = clamp(power, -maxPower, maxPower);
 
-            rotationMotor.setPower(power);
+            turretMotor.setPower(power);
 
-            telemetry.addLine("Auto Tracking");
+            telemetry.addLine("TAG LOCK");
             telemetry.addData("Raw tx", tx);
             telemetry.addData("Filtered tx", filteredTx);
-            telemetry.addData("Motor Power", power);
+            telemetry.addData("Power", power);
 
         } else {
-            rotationMotor.setPower(0);
-            firstReading = true;
-            telemetry.addLine("No Tag Detected");
+            // If tag recently seen, hold last error to prevent twitching
+            long dt = System.currentTimeMillis() - lastValidTime;
+
+            if (dt < tagTimeout) {
+                // keep last power, do nothing
+                telemetry.addLine("Tag Lost (Holding)");
+            } else {
+                // stop turret after timeout
+                turretMotor.setPower(0);
+                firstReading = true;
+                telemetry.addLine("No Tag");
+            }
         }
 
         telemetry.update();
     }
 
-    /** Manual control for turret (e.g., RB/LB) */
-    public void setManualPower(double power) {
-        rotationMotor.setPower(clamp(power, -maxPower, maxPower));
-        firstReading = true; // reset filtered value when manual control is used
+    /** Manual override from driver */
+    public void manual(double power) {
+        turretMotor.setPower(clamp(power, -maxPower, maxPower));
+        firstReading = true; // reset smoothing
     }
 
-    /** Stop turret immediately */
+    /** Full stop */
     public void stop() {
-        rotationMotor.setPower(0);
+        turretMotor.setPower(0);
         firstReading = true;
     }
 
-    /** Utility clamp method */
     private double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
     }
