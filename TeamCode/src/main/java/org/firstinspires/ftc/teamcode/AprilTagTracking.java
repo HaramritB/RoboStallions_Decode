@@ -13,8 +13,8 @@ public class AprilTagTracking {
     private final Telemetry telemetry;
 
     // PID / proportional control
-    private final double kP = 0.03;
-    private final double maxPower = 0.75;
+    private final double kP = 0.015;
+    private final double maxPower = 0.85;
 
     // Low-pass filter
     private final double alpha = 0.4;

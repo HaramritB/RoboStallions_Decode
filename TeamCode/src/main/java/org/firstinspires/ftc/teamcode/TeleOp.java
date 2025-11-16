@@ -36,20 +36,15 @@ public class TeleOp extends LinearOpMode {
                     gamepad1.right_stick_x,
                     false,
                     false,
-                    gamepad1.dpad_left,
-                    gamepad1.dpad_right
+                    gamepad1.dpad_right,
+                    gamepad1.dpad_left
             );
 
             // -----------------------------
             // FLYWHEEL CONTROL
             // -----------------------------
             if (gamepad1.right_trigger > 0.5) {
-                targetRPM += RPM_STEP;
-                sleep(150);
-            }
-            if (gamepad1.left_trigger > 0.5) {
                 targetRPM -= RPM_STEP;
-                if (targetRPM < 0) targetRPM = 0;
                 sleep(150);
             }
             if (gamepad1.left_stick_button) {
@@ -79,11 +74,11 @@ public class TeleOp extends LinearOpMode {
             if (gamepad1.left_bumper)  manualPower = 0.4;  // left
 
             if (manualPower != 0) {
-                turret.setManualPower(manualPower);
+                turret.setManualPower(manualPower);             // manual override
             } else if (aprilTagMode) {
-                turret.update();
+                turret.update();                         // AprilTag tracking
             } else {
-                turret.setManualPower(0);
+                turret.stop();                           // idle hold
             }
 
             // -----------------------------
