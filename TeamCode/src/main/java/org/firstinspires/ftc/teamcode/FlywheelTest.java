@@ -9,7 +9,7 @@ public class FlywheelTest extends LinearOpMode {
     private Flywheel flywheel;
     private Distance distanceSensor;
 
-    private static final double RPM_STEP = 100;  // Increased step for easier testing
+    private static final double RPM_STEP = 1;  // Increased step for easier testing
     private double targetRPM = 0;
 
     private boolean rbPressedLast = false;
@@ -81,6 +81,7 @@ public class FlywheelTest extends LinearOpMode {
             // --------------------------
             // RPM control
             // --------------------------
+            /*
             boolean rtPressed = gamepad1.right_trigger > 0.5;
             boolean ltPressed = gamepad1.left_trigger > 0.5;
 
@@ -104,6 +105,36 @@ public class FlywheelTest extends LinearOpMode {
             if (targetRPM > 6000) targetRPM = 6000;  // Safety limit
 
             flywheel.setTargetRPM(targetRPM);
+
+             */
+            boolean upHeld = false;
+            boolean downHeld = false;
+
+            if (gamepad1.dpad_up && !upHeld) {
+                targetRPM += 5;
+                upHeld = true;
+            }
+            if (gamepad1.dpadUpWasReleased()) {
+                upHeld = false;
+            }
+
+            if (gamepad1.dpad_down && !downHeld) {
+                targetRPM -= 5;
+                downHeld = true;
+            }
+            if (gamepad1.dpadDownWasReleased()) {
+                downHeld = false;
+            }
+
+            if (targetRPM<0) {
+                targetRPM=0;
+            }
+            if (targetRPM>100) {
+                targetRPM=100;
+            }
+            //flywheel.setTargetRPM(targetRPM);
+            flywheel.setRawPower(targetRPM/100);
+
 
             // --------------------------
             // Hood toggle via RB
