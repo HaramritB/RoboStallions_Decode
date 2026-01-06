@@ -8,7 +8,7 @@ public class Intake {
 
     private final DcMotor intakeMotor;
 
-    private final double intakePower = 0.85;
+    private final double intakePower = 0.95;
     private final double ejectPower = -0.9;
 
     private boolean isRunning = false;

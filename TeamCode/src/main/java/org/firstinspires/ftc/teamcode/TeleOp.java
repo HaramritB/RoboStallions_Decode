@@ -2,6 +2,10 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.teamcode.flywheel.Flywheel;
+import org.firstinspires.ftc.teamcode.gate.Gate;
+import org.firstinspires.ftc.teamcode.limelight.AprilTagTracking;
+
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOp", group = "Competition")
 public class TeleOp extends LinearOpMode {
 
@@ -13,7 +17,8 @@ public class TeleOp extends LinearOpMode {
         AprilTagTracking turret = new AprilTagTracking(hardwareMap, telemetry);
         Flywheel flywheel = new Flywheel(hardwareMap);
         Intake intake = new Intake(hardwareMap);
-        Kicker kicker = new Kicker(hardwareMap);
+        Gate gate = new Gate(hardwareMap);
+
 
         double targetRPM = 0;
         boolean aprilTagMode = false;
@@ -85,7 +90,7 @@ public class TeleOp extends LinearOpMode {
             // INTAKE & KICKER
             // -----------------------------
             intake.update(gamepad1);
-            kicker.update(gamepad1);
+            // gate.update(gamepad1);
 
             // -----------------------------
             // TELEMETRY
