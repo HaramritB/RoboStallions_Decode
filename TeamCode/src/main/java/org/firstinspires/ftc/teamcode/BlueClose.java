@@ -38,6 +38,8 @@ public class BlueClose extends OpMode {
 
     private final Pose secondIntakePose = new Pose(17.033647375504707, 52.29205921938089, Math.toRadians(230));
 
+    private final Pose thirdIntakePose = new Pose(17.30512514898689, 36.55899880810489, Math.toRadians(190));
+
     private PathChain driveStartPosShootPos, shootPosFirstIntake, firstIntakeShootPos, shootPosSecondIntake;
     public void buildPaths() {
         // coordinates for starting pose then ending pose
@@ -58,6 +60,20 @@ public class BlueClose extends OpMode {
                 .setLinearHeadingInterpolation(shootPose.getHeading(), secondIntakePose.getHeading())
                 .build();
     }
+
+            shootPosThirdPoseIntake = follower.pathBuilder()
+                .addPath(new BezierLine(shootPose, thirdIntakePose))
+                .setLinearHeadingInterpolation(shootPose.getHeading(), thirdIntakePose.getHeading())
+                .build();
+    }
+            shootThirdIntakeReturn = follower.pathBuilder()
+                .addPath(new BezierLine(thirdIntakePose, shootPose))
+                .setLinearHeadingInterpolation(thirdIntakePose.getHeading(), shootPose.getHeading())
+                .build();
+    }
+
+    
+
 
     public void statePathUpdate() {
         switch (pathState) {
