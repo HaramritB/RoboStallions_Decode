@@ -1,8 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-
-
-
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.FollowerConstants;
@@ -15,25 +12,16 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 
-
-
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
-
-
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(12.8)
-            .forwardZeroPowerAcceleration(-7500.74)
-            .lateralZeroPowerAcceleration(-131.26)
+            //.forwardZeroPowerAcceleration(-7500.74)
+            //.lateralZeroPowerAcceleration(-131.26)
 
             ;
-
-
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1 , 1);
-
-
 
 
     public static Follower createFollower(HardwareMap hardwareMap) {
@@ -45,8 +33,6 @@ public class Constants {
     }
 
 
-
-
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
             .rightFrontMotorName("frontright")
@@ -56,12 +42,12 @@ public class Constants {
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .xVelocity(65.8486)
-            .yVelocity(61.8671);
+            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
+    //.xVelocity(61.273)
+    //.yVelocity(41.402);
     public static PinpointConstants  localizerConstants = new PinpointConstants()
-            .forwardPodY(-2.5)
-            .strafePodX(-2.9)
+            .forwardPodY(-3.125)
+            .strafePodX(-1.125)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)

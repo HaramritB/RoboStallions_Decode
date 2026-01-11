@@ -1,3 +1,4 @@
+/*
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.follower.Follower;
@@ -5,12 +6,16 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.flywheel.Flywheel;
 
 import com.pedropathing.util.Timer;
 @Autonomous
+@Disabled
+*/
+/*
 public class BlueClose extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
@@ -59,7 +64,6 @@ public class BlueClose extends OpMode {
                 .addPath(new BezierLine(shootPose, secondIntakePose))
                 .setLinearHeadingInterpolation(shootPose.getHeading(), secondIntakePose.getHeading())
                 .build();
-    
 
         shootPosThirdPoseIntake = follower.pathBuilder()
             .addPath(new BezierLine(shootPose, thirdIntakePose))
@@ -147,4 +151,4 @@ public class BlueClose extends OpMode {
         follower.update();
         statePathUpdate();
     }
-}
+} */
