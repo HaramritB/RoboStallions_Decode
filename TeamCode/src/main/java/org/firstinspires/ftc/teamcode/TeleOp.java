@@ -18,12 +18,18 @@ public class TeleOp extends LinearOpMode {
         Flywheel flywheel = new Flywheel(hardwareMap);
         Intake intake = new Intake(hardwareMap);
         Gate gate = new Gate(hardwareMap);
-
+        Transfer transfer = new Transfer(hardwareMap);
 
         double targetRPM = 0;
         boolean aprilTagMode = false;
         boolean aPressedLast = false;
+
+        // Triangle edge detect
         boolean flywheelToggleLast = false;
+
+        // Dpad-down edge detect for RPM step
+        boolean dpadDownLast = false;
+
         double RPM_STEP = 10;
 
         telemetry.addLine("TeleOp Initialized");
@@ -46,22 +52,32 @@ public class TeleOp extends LinearOpMode {
             );
 
             // -----------------------------
+            // TRANSFER (RIGHT TRIGGER)
+            // -----------------------------
+            transfer.update(gamepad1.right_trigger);
+
+            // -----------------------------
             // FLYWHEEL CONTROL
             // -----------------------------
-            if (gamepad1.right_trigger > 0.5) {
+            // RPM decrement moved off right_trigger to avoid conflict
+            boolean dpadDownNow = gamepad1.dpad_down;
+            if (dpadDownNow && !dpadDownLast) {
                 targetRPM -= RPM_STEP;
-                sleep(150);
             }
+            dpadDownLast = dpadDownNow;
+
             if (gamepad1.left_stick_button) {
                 targetRPM = 0;
             }
+
             flywheel.setTargetRPM(targetRPM);
 
-            boolean flywheelToggle = gamepad1.right_stick_button;
-            if (flywheelToggle && !flywheelToggleLast) {
+            // Hood toggle on TRIANGLE
+            boolean trianglePressed = gamepad1.triangle;
+            if (trianglePressed && !flywheelToggleLast) {
                 flywheel.toggleHood();
             }
-            flywheelToggleLast = flywheelToggle;
+            flywheelToggleLast = trianglePressed;
 
             double currentRPM = (flywheel.getAverageVelocity() / flywheel.getTicksPerRev()) * 60.0;
 
@@ -79,18 +95,18 @@ public class TeleOp extends LinearOpMode {
             if (gamepad1.left_bumper)  manualPower = 0.4;  // left
 
             if (manualPower != 0) {
-                turret.setManualPower(manualPower);             // manual override
+                turret.setManualPower(manualPower);     // manual override
             } else if (aprilTagMode) {
-                turret.update();                         // AprilTag tracking
+                turret.update();                        // AprilTag tracking
             } else {
-                turret.stop();                           // idle hold
+                turret.stop();                          // idle hold
             }
 
             // -----------------------------
-            // INTAKE & KICKER
+            // INTAKE & GATE
             // -----------------------------
             intake.update(gamepad1);
-            // gate.update(gamepad1);
+            gate.update(gamepad1); // LEFT TRIGGER controls gate
 
             // -----------------------------
             // TELEMETRY
@@ -99,9 +115,11 @@ public class TeleOp extends LinearOpMode {
             telemetry.addData("Target RPM", targetRPM);
             telemetry.addData("Current RPM", String.format("%.1f", currentRPM));
             telemetry.addData("Hood Position", flywheel.getHoodPosition());
+            telemetry.addData("Transfer Power", transfer.getPower());
             telemetry.addData("Intake Running", intake.isRunning());
             telemetry.addData("Intake Motor Power", intake.getMotorPower());
             telemetry.addData("AprilTag Mode", aprilTagMode ? "Tracking" : "Manual");
+            telemetry.addData("Gate Position", gate.getPosition());
             telemetry.update();
         }
 
@@ -112,5 +130,7 @@ public class TeleOp extends LinearOpMode {
         turret.stop();
         flywheel.stop();
         intake.stop();
+        transfer.stop();
+        gate.close();
     }
 }
