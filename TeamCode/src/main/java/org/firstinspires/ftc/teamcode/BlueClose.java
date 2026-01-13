@@ -46,29 +46,32 @@ public class BlueClose extends OpMode {
         FIFTH_INTAKESHOOT_POS,
         SHOOT_POS_FIFTH,
 
-       /*
-       21 ball auto
-       SHOOT_POSSIXTH_INTAKE,
-       SIXTH_INTAKE,
-       SIXTH_INTAKESHOOT_POS,
-       SHOOT_POS_SIXTH
-       */
+        // 21 ball auto
+        SHOOT_POSSIXTH_INTAKE,
+        SIXTH_INTAKE,
+        SIXTH_INTAKESHOOT_POS,
+        SHOOT_POS_SIXTH
     }
 
     PathState pathState;
 
     private final Pose startPose = new Pose(20.532974427994617, 122.43876177658142, Math.toRadians(138));
-    private final Pose shootPose = new Pose(59.294751009421255, 83.87079407806189, Math.toRadians(124));
-    private final Pose firstIntake = new Pose(15.48183041722746, 58.41184387617765, Math.toRadians(205));
-    // control points for first intake
-    private final Pose c1 = new Pose(46.62113055181696, 61.15612382234185);
+    private final Pose shootPose = new Pose(59.294751009421255, 83.87079407806189, Math.toRadians(129));
+    private final Pose firstIntake = new Pose(17.419919246298797, 59.768506056527585, Math.toRadians(195));
+    // control point for first intake
+    private final Pose c1 = new Pose(46.62113055181696, 58.63660834454912);
     private final Pose gateIntake = new Pose(13.35531628532974, 62.58681022880214, Math.toRadians(170));
-    private final Pose secondIntake = new Pose(14.830417227456266, 84.76446837146705, Math.toRadians(180));
+    private final Pose secondIntake = new Pose(18.318977119784666, 83.79542395693137, Math.toRadians(180));
+    private final Pose thirdIntake = new Pose(16.744279946164202, 35.288021534320315, Math.toRadians(180));
+
+    // control point for third intake
+    private final Pose c2 = new Pose(70.16083445491253, 36.22139973082097);
 
 
     private PathChain driveStartPosShootPos, shootPreloadPosFirstIntakePos, firstIntakePosShootPos,
             shootPosGateIntakePos, gateIntakePosShootPos, shootPos2GateIntakePos, gateIntakePosShootPos2,
-            shootPos3GateIntakePos, gateIntakePosShootPos3, shootPosSecondIntakePos, secondIntakePosShootPos;
+            shootPos3GateIntakePos, gateIntakePosShootPos3, shootPosSecondIntakePos, secondIntakePosShootPos,
+            shootPosThirdIntake, thirdIntakeShootPos;
 
 
     public void buildPaths() {
@@ -116,6 +119,14 @@ public class BlueClose extends OpMode {
         secondIntakePosShootPos = follower.pathBuilder()
                 .addPath(new BezierLine(secondIntake, shootPose))
                 .setLinearHeadingInterpolation(secondIntake.getHeading(), shootPose.getHeading())
+                .build();
+        shootPosThirdIntake = follower.pathBuilder()
+                .addPath(new BezierCurve(shootPose, c2, thirdIntake))
+                .setLinearHeadingInterpolation(thirdIntake.getHeading(), thirdIntake.getHeading())
+                .build();
+        thirdIntakeShootPos = follower.pathBuilder()
+                .addPath(new BezierLine(thirdIntake, shootPose))
+                .setLinearHeadingInterpolation(thirdIntake.getHeading(), shootPose.getHeading())
                 .build();
     }
 
@@ -299,8 +310,41 @@ public class BlueClose extends OpMode {
                 // flywheel logic
 
                 if (!follower.isBusy()) {
-                    telemetry.addLine("Done All Paths");
+
+
+                    setPathState(PathState.SHOOT_POSSIXTH_INTAKE);
                 }
+                break;
+            case SHOOT_POSSIXTH_INTAKE:
+                if (!follower.isBusy()) {
+                    follower.followPath(shootPosThirdIntake, true);
+                    setPathState(PathState.SIXTH_INTAKE);
+                }
+                break;
+            case SIXTH_INTAKE:
+                // intake logic
+
+                if (!follower.isBusy()) {
+
+                    setPathState(PathState.SIXTH_INTAKESHOOT_POS);
+                }
+
+                break;
+            case SIXTH_INTAKESHOOT_POS:
+                if (!follower.isBusy()) {
+                    follower.followPath(thirdIntakeShootPos, true);
+                    setPathState(PathState.SHOOT_POS_SIXTH);
+                }
+                break;
+            case SHOOT_POS_SIXTH:
+                // flywheel logic
+
+                if (!follower.isBusy()) {
+
+
+                    telemetry.addLine("All Paths Completed");
+                }
+
                 break;
             default:
                 telemetry.addLine("No State Commanded");
@@ -339,8 +383,11 @@ public class BlueClose extends OpMode {
         statePathUpdate();
         // add telemetry data here
 
-
-
+        telemetry.addData("Path State:", pathState.toString());
+        telemetry.addData("X: ", follower.getPose().getX());
+        telemetry.addData("Y: ", follower.getPose().getY());
+        telemetry.addData("Heading: ", follower.getPose().getHeading());
+        telemetry.addData("Time: ", pathTimer.getElapsedTime());
     }
 }
 
