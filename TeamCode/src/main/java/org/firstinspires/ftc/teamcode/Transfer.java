@@ -23,6 +23,10 @@ public class Transfer {
         }
     }
 
+    public void autoTransfer() {
+        transfer.setPower(1.0);
+    }
+
     public void stop() {
         transfer.setPower(0.0);
     }

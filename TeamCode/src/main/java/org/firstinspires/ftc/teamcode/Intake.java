@@ -20,6 +20,10 @@ public class Intake {
         intakeMotor.setDirection(DcMotor.Direction.FORWARD); // reverse if needed
     }
 
+    public void autoIntake() {
+        intakeMotor.setPower(intakePower);
+    }
+
     // Call this every loop and pass gamepad1
     public void update(Gamepad gamepad) {
         if (gamepad.x) {

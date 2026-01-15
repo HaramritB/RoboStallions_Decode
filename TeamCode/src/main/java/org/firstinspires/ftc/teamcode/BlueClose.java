@@ -10,12 +10,24 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 import com.pedropathing.util.Timer;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
 @Autonomous
 public class BlueClose extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
+
+    // private DcMotor autoIntake;
+    // private DcMotor autoTransfer;
+
+    /*
+    public BlueClose(DcMotor autoIntake, DcMotor autoTransfer) {
+        this.autoIntake = autoIntake;
+        this.autoTransfer = autoTransfer;
+    } */
 
 
     public enum PathState {
@@ -60,9 +72,9 @@ public class BlueClose extends OpMode {
     private final Pose firstIntake = new Pose(17.419919246298797, 59.768506056527585, Math.toRadians(195));
     // control point for first intake
     private final Pose c1 = new Pose(46.62113055181696, 58.63660834454912);
-    private final Pose gateIntake = new Pose(13.35531628532974, 62.58681022880214, Math.toRadians(170));
-    private final Pose secondIntake = new Pose(18.318977119784666, 83.79542395693137, Math.toRadians(180));
-    private final Pose thirdIntake = new Pose(16.744279946164202, 35.288021534320315, Math.toRadians(180));
+    private final Pose gateIntake = new Pose(13.35531628532974, 62.58681022880214, Math.toRadians(175));
+    private final Pose secondIntake = new Pose(20.257065948856, 83.60161507402425, Math.toRadians(180));
+    private final Pose thirdIntake = new Pose(20.03903095558547, 35.675639300134584, Math.toRadians(180));
 
     // control point for third intake
     private final Pose c2 = new Pose(70.16083445491253, 36.22139973082097);
@@ -157,6 +169,8 @@ public class BlueClose extends OpMode {
                 break;
             case FIRST_INTAKE:
                 // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
 
                 if (!follower.isBusy()) {
                     setPathState(PathState.FIRST_INTAKESHOOT_POS);
@@ -192,6 +206,8 @@ public class BlueClose extends OpMode {
                 break;
             case SECOND_INTAKE:
                 //intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
 
                 if (!follower.isBusy()) {
                     setPathState(PathState.SECOND_INTAKESHOOT_POS);
@@ -227,6 +243,9 @@ public class BlueClose extends OpMode {
                 break;
             case THIRD_INTAKE:
                 // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
+
 
                 if (!follower.isBusy()) {
                     setPathState(PathState.THIRD_INTAKESHOOT_POS);
@@ -263,6 +282,9 @@ public class BlueClose extends OpMode {
                 break;
             case FOURTH_INTAKE:
                 // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
+
                 if (!follower.isBusy()) {
                     setPathState(PathState.FOURTH_INTAKESHOOT_POS);
                 }
@@ -294,6 +316,9 @@ public class BlueClose extends OpMode {
                 break;
             case FIFTH_INTAKE:
                 // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
+
                 if (!follower.isBusy()) {
                     setPathState(PathState.FIFTH_INTAKESHOOT_POS);
                 }
@@ -323,6 +348,8 @@ public class BlueClose extends OpMode {
                 break;
             case SIXTH_INTAKE:
                 // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
 
                 if (!follower.isBusy()) {
 
@@ -367,6 +394,8 @@ public class BlueClose extends OpMode {
         follower = Constants.createFollower(hardwareMap);
 
         // add mechs
+        //autoIntake = hardwareMap.get(DcMotor.class, "intake");
+        //autoTransfer = hardwareMap.get(DcMotor.class, "transfer");
 
         buildPaths();
         follower.setPose(startPose);
