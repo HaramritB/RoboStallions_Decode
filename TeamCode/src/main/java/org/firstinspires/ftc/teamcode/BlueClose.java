@@ -10,6 +10,7 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import com.pedropathing.util.Timer;
@@ -20,15 +21,8 @@ public class BlueClose extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
 
-    // private DcMotor autoIntake;
-    // private DcMotor autoTransfer;
-
-    /*
-    public BlueClose(DcMotor autoIntake, DcMotor autoTransfer) {
-        this.autoIntake = autoIntake;
-        this.autoTransfer = autoTransfer;
-    } */
-
+    //private DcMotor autoIntake;
+    //private DcMotor autoTransfer;
 
     public enum PathState {
         // Start Position_End Position
