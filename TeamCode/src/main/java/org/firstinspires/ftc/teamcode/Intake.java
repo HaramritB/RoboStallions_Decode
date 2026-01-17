@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+
 public class Intake {
 
     private final DcMotor intakeMotor;
@@ -18,10 +19,6 @@ public class Intake {
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setDirection(DcMotor.Direction.FORWARD); // reverse if needed
-    }
-
-    public void autoIntake() {
-        intakeMotor.setPower(intakePower);
     }
 
     // Call this every loop and pass gamepad1
