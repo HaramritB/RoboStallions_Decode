@@ -17,9 +17,9 @@ public class Transfer {
 
     public void update(double triggerValue) {
         if (triggerValue > 0.1) {
-            transfer.setPower(1.0);   // full speed while held nigge
+            transfer.setPower(.95);   // full speed while held nigge
         } else {
-            stop();
+            transfer.setPower(0.25);
         }
     }
 

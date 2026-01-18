@@ -24,7 +24,7 @@ public class FlywheelTuner extends OpMode {
     private boolean lastX = false;
 
     // Flywheel velocities
-    private double highVelocity = 2000;
+    private double highVelocity = 1600;
     private double lowVelocity = 900;
     private double targetVelocity = highVelocity;
 
