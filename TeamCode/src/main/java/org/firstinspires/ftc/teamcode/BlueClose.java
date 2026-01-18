@@ -44,6 +44,7 @@ public class BlueClose extends OpMode {
     private final double VELOCITY_READY_TOLERANCE = 100.0;  // when considered "at speed"
     private final double VELOCITY_DROP_THRESHOLD  = 50.0;  // drop that indicates a shot
     private boolean feeding = false; // true while we are feeding a ball into the flywheel
+    private long feedStartTime = 0; // used for failsafe timing of ball feed
 
     public enum PathState {
         // Start Position_End Position
@@ -181,242 +182,255 @@ public class BlueClose extends OpMode {
         switch (pathState) {
             case DRIVE_STARTPOS_SHOOT_POS:
                 follower.followPath(driveStartPosShootPos, true);
-                setPathState(PathState.SHOOT_PRELOAD); // timer
+                setPathState(PathState.SHOOT_PRELOAD); // immediately go to shoot preload after path
                 break;
+
             case SHOOT_PRELOAD:
-                // flywheel logic
-                // check if follower is done its path
                 if (!follower.isBusy()) {
-                    // velocity-drop based feed
-                    if (!feeding && flywheelAtSpeed()) {
+                    // start feeding once at speed and settled
+                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
                         startFeed();
                         gate.open();
+                        feedStartTime = System.currentTimeMillis(); // start failsafe timer
                     }
-                    if (feeding && flywheelDropped()) {
+
+                    // stop feeding once shot detected or failsafe timeout
+                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
                         stopFeed();
                         gate.close();
                         setPathState(PathState.SHOOT_PRELOADFIRST_INTAKE);
                     }
                 }
                 break;
+
             case SHOOT_PRELOADFIRST_INTAKE:
                 if (!follower.isBusy()) {
                     follower.followPath(shootPreloadPosFirstIntakePos, true);
                     setPathState(PathState.FIRST_INTAKE);
                 }
                 break;
+
             case FIRST_INTAKE:
-                // intake logic
                 autoIntake.setPower(intakeDefaultPower);
                 autoTransfer.setPower(transferDefaultPower);
-
                 if (!follower.isBusy()) {
                     setPathState(PathState.FIRST_INTAKESHOOT_POS);
                 }
                 break;
+
             case FIRST_INTAKESHOOT_POS:
                 if (!follower.isBusy()) {
                     follower.followPath(firstIntakePosShootPos, true);
                     setPathState(PathState.SHOOT_POS_FIRST);
                 }
                 break;
+
             case SHOOT_POS_FIRST:
-                // flywheel logic
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed()) {
+                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
                         startFeed();
                         gate.open();
+                        feedStartTime = System.currentTimeMillis();
                     }
-                    if (feeding && flywheelDropped()) {
+
+                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
                         stopFeed();
                         gate.close();
                         setPathState(PathState.SHOOT_POSFIRST_GATE);
                     }
                 }
                 break;
+
             case SHOOT_POSFIRST_GATE:
                 if (!follower.isBusy()) {
                     follower.followPath(shootPosGateIntakePos, true);
                     setPathState(PathState.SECOND_INTAKE);
                 }
                 break;
+
             case SECOND_INTAKE:
-                //intake logic
                 autoIntake.setPower(intakeDefaultPower);
                 autoTransfer.setPower(transferDefaultPower);
-
                 if (!follower.isBusy()) {
                     setPathState(PathState.SECOND_INTAKESHOOT_POS);
                 }
                 break;
+
             case SECOND_INTAKESHOOT_POS:
                 if (!follower.isBusy()) {
                     follower.followPath(gateIntakePosShootPos, true);
                     setPathState(PathState.SHOOT_POS_SECOND);
                 }
                 break;
+
             case SHOOT_POS_SECOND:
-                // flywheel logic
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed()) {
+                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
                         startFeed();
                         gate.open();
+                        feedStartTime = System.currentTimeMillis();
                     }
-                    if (feeding && flywheelDropped()) {
+
+                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
                         stopFeed();
                         gate.close();
                         setPathState(PathState.SHOOT_POSSECOND_GATE);
                     }
                 }
                 break;
+
             case SHOOT_POSSECOND_GATE:
                 if (!follower.isBusy()) {
                     follower.followPath(shootPos2GateIntakePos, true);
                     setPathState(PathState.THIRD_INTAKE);
                 }
                 break;
+
             case THIRD_INTAKE:
-                // intake logic
                 autoIntake.setPower(intakeDefaultPower);
                 autoTransfer.setPower(transferDefaultPower);
-
                 if (!follower.isBusy()) {
                     setPathState(PathState.THIRD_INTAKESHOOT_POS);
                 }
                 break;
+
             case THIRD_INTAKESHOOT_POS:
                 if (!follower.isBusy()) {
                     follower.followPath(gateIntakePosShootPos2, true);
                     setPathState(PathState.SHOOT_POS_THIRD);
                 }
                 break;
+
             case SHOOT_POS_THIRD:
-                // flywheel logic
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed()) {
+                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
                         startFeed();
                         gate.open();
+                        feedStartTime = System.currentTimeMillis();
                     }
-                    if (feeding && flywheelDropped()) {
+
+                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
                         stopFeed();
                         gate.close();
                         setPathState(PathState.SHOOT_POSTHIRD_GATE);
                     }
                 }
                 break;
+
             case SHOOT_POSTHIRD_GATE:
                 if (!follower.isBusy()) {
                     follower.followPath(shootPos3GateIntakePos, true);
                     setPathState(PathState.FOURTH_INTAKE);
                 }
                 break;
+
             case FOURTH_INTAKE:
-                // intake logic
                 autoIntake.setPower(intakeDefaultPower);
                 autoTransfer.setPower(transferDefaultPower);
-
                 if (!follower.isBusy()) {
                     setPathState(PathState.FOURTH_INTAKESHOOT_POS);
                 }
-
                 break;
+
             case FOURTH_INTAKESHOOT_POS:
                 if (!follower.isBusy()) {
                     follower.followPath(gateIntakePosShootPos3, true);
                     setPathState(PathState.SHOOT_POS_FOURTH);
                 }
-
                 break;
+
             case SHOOT_POS_FOURTH:
-                // flywheel logic
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed()) {
+                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
                         startFeed();
                         gate.open();
+                        feedStartTime = System.currentTimeMillis();
                     }
-                    if (feeding && flywheelDropped()) {
+
+                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
                         stopFeed();
                         gate.close();
                         setPathState(PathState.SHOOT_POSFIFTH_INTAKE);
                     }
                 }
-
                 break;
+
             case SHOOT_POSFIFTH_INTAKE:
                 if (!follower.isBusy()) {
                     follower.followPath(shootPosSecondIntakePos, true);
                     setPathState(PathState.FIFTH_INTAKE);
                 }
-
                 break;
+
             case FIFTH_INTAKE:
-                // intake logic
                 autoIntake.setPower(intakeDefaultPower);
                 autoTransfer.setPower(transferDefaultPower);
-
                 if (!follower.isBusy()) {
                     setPathState(PathState.FIFTH_INTAKESHOOT_POS);
                 }
-
                 break;
-            case FIFTH_INTAKESHOOT_POS:
 
+            case FIFTH_INTAKESHOOT_POS:
                 if (!follower.isBusy()) {
                     follower.followPath(secondIntakePosShootPos, true);
                     setPathState(PathState.SHOOT_POS_FIFTH);
                 }
                 break;
+
             case SHOOT_POS_FIFTH:
-                // flywheel logic
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed()) {
+                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
                         startFeed();
                         gate.open();
+                        feedStartTime = System.currentTimeMillis();
                     }
-                    if (feeding && flywheelDropped()) {
+
+                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
                         stopFeed();
                         gate.close();
                         setPathState(PathState.SHOOT_POSSIXTH_INTAKE);
                     }
                 }
                 break;
+
             case SHOOT_POSSIXTH_INTAKE:
                 if (!follower.isBusy()) {
                     follower.followPath(shootPosThirdIntake, true);
                     setPathState(PathState.SIXTH_INTAKE);
                 }
                 break;
+
             case SIXTH_INTAKE:
-                // intake logic
                 autoIntake.setPower(intakeDefaultPower);
                 autoTransfer.setPower(transferDefaultPower);
-
                 if (!follower.isBusy()) {
-
                     setPathState(PathState.SIXTH_INTAKESHOOT_POS);
                 }
-
                 break;
+
             case SIXTH_INTAKESHOOT_POS:
                 if (!follower.isBusy()) {
                     follower.followPath(thirdIntakeShootPos, true);
                     setPathState(PathState.SHOOT_POS_SIXTH);
                 }
                 break;
+
             case SHOOT_POS_SIXTH:
-                // flywheel logic
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed()) {
+                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
                         startFeed();
                         gate.open();
+                        feedStartTime = System.currentTimeMillis();
                     }
-                    if (feeding && flywheelDropped()) {
+
+                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
                         stopFeed();
                         gate.close();
                         telemetry.addLine("All Paths Completed");
                     }
                 }
                 break;
+
             default:
                 telemetry.addLine("No State Commanded");
                 break;
