@@ -18,6 +18,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.gate.AutoGate;
 import org.firstinspires.ftc.teamcode.gate.Gate;
@@ -38,13 +39,19 @@ public class BlueClose extends OpMode {
 
     private DcMotorEx autoFlywheel;
 
-    private AutoGate gate;
+    private Servo gate;
+
+    private static final double CENTER = 0.50;     // gate closed / neutral
+    private static final double OPEN = 0.0;
 
     private final double FLYWHEEL_TARGET_VELOCITY = 1600.0; // ticks/sec (tuned)
     private final double VELOCITY_READY_TOLERANCE = 100.0;  // when considered "at speed"
     private final double VELOCITY_DROP_THRESHOLD  = 50.0;  // drop that indicates a shot
     private boolean feeding = false; // true while we are feeding a ball into the flywheel
     private long feedStartTime = 0; // used for failsafe timing of ball feed
+
+    // EDIT: feed time constant kept (not used for time-based here)
+    private final long FEED_TIME_MS = 1500L;
 
     public enum PathState {
         // Start Position_End Position
@@ -167,12 +174,14 @@ public class BlueClose extends OpMode {
     }
 
     private void startFeed() {
+        // EDIT: raise intake/transfer to shoot power when feeding
         autoIntake.setPower(intakeShootPower);
         autoTransfer.setPower(transferShootPower);
         feeding = true;
     }
 
     private void stopFeed() {
+        // EDIT: restore intake/transfer to default power when not actively shooting
         autoIntake.setPower(intakeDefaultPower);
         autoTransfer.setPower(transferDefaultPower);
         feeding = false;
@@ -187,17 +196,17 @@ public class BlueClose extends OpMode {
 
             case SHOOT_PRELOAD:
                 if (!follower.isBusy()) {
-                    // start feeding once at speed and settled
-                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
+                    // start feeding once settled (no velocity-drop used here)
+                    if (!feeding && pathTimer.getElapsedTime() >= 0.15 && flywheelAtSpeed()) { // EDIT: start feed on settle+at-speed
                         startFeed();
-                        gate.open();
-                        feedStartTime = System.currentTimeMillis(); // start failsafe timer
+                        gate.setPosition(OPEN);
+                        feedStartTime = System.currentTimeMillis(); // start timing
                     }
 
-                    // stop feeding once shot detected or failsafe timeout
-                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
+                    // stop feeding after fixed time
+                    if (feeding && System.currentTimeMillis() - feedStartTime >= FEED_TIME_MS) { // EDIT: time-based stop
                         stopFeed();
-                        gate.close();
+                        gate.setPosition(CENTER);
                         setPathState(PathState.SHOOT_PRELOADFIRST_INTAKE);
                     }
                 }
@@ -211,6 +220,7 @@ public class BlueClose extends OpMode {
                 break;
 
             case FIRST_INTAKE:
+                // keep intake/transfer at default power during intake states
                 autoIntake.setPower(intakeDefaultPower);
                 autoTransfer.setPower(transferDefaultPower);
                 if (!follower.isBusy()) {
@@ -227,15 +237,15 @@ public class BlueClose extends OpMode {
 
             case SHOOT_POS_FIRST:
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
+                    if (!feeding && pathTimer.getElapsedTime() >= 0.15 && flywheelAtSpeed()) { // EDIT
                         startFeed();
-                        gate.open();
+                        gate.setPosition(OPEN);
                         feedStartTime = System.currentTimeMillis();
                     }
 
-                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
+                    if (feeding && System.currentTimeMillis() - feedStartTime >= FEED_TIME_MS) { // EDIT
                         stopFeed();
-                        gate.close();
+                        gate.setPosition(CENTER);
                         setPathState(PathState.SHOOT_POSFIRST_GATE);
                     }
                 }
@@ -265,15 +275,15 @@ public class BlueClose extends OpMode {
 
             case SHOOT_POS_SECOND:
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
+                    if (!feeding && pathTimer.getElapsedTime() >= 0.15 && flywheelAtSpeed()) { // EDIT
                         startFeed();
-                        gate.open();
+                        gate.setPosition(OPEN);
                         feedStartTime = System.currentTimeMillis();
                     }
 
-                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
+                    if (feeding && System.currentTimeMillis() - feedStartTime >= FEED_TIME_MS) { // EDIT
                         stopFeed();
-                        gate.close();
+                        gate.setPosition(CENTER);
                         setPathState(PathState.SHOOT_POSSECOND_GATE);
                     }
                 }
@@ -303,15 +313,15 @@ public class BlueClose extends OpMode {
 
             case SHOOT_POS_THIRD:
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
+                    if (!feeding && pathTimer.getElapsedTime() >= 0.15 && flywheelAtSpeed()) { // EDIT
                         startFeed();
-                        gate.open();
+                        gate.setPosition(OPEN);
                         feedStartTime = System.currentTimeMillis();
                     }
 
-                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
+                    if (feeding && System.currentTimeMillis() - feedStartTime >= FEED_TIME_MS) { // EDIT
                         stopFeed();
-                        gate.close();
+                        gate.setPosition(CENTER);
                         setPathState(PathState.SHOOT_POSTHIRD_GATE);
                     }
                 }
@@ -341,15 +351,15 @@ public class BlueClose extends OpMode {
 
             case SHOOT_POS_FOURTH:
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
+                    if (!feeding && pathTimer.getElapsedTime() >= 0.15 && flywheelAtSpeed()) { // EDIT
                         startFeed();
-                        gate.open();
+                        gate.setPosition(OPEN);
                         feedStartTime = System.currentTimeMillis();
                     }
 
-                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
+                    if (feeding && System.currentTimeMillis() - feedStartTime >= FEED_TIME_MS) { // EDIT
                         stopFeed();
-                        gate.close();
+                        gate.setPosition(CENTER);
                         setPathState(PathState.SHOOT_POSFIFTH_INTAKE);
                     }
                 }
@@ -379,15 +389,15 @@ public class BlueClose extends OpMode {
 
             case SHOOT_POS_FIFTH:
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
+                    if (!feeding && pathTimer.getElapsedTime() >= 0.15 && flywheelAtSpeed()) { // EDIT
                         startFeed();
-                        gate.open();
+                        gate.setPosition(OPEN);
                         feedStartTime = System.currentTimeMillis();
                     }
 
-                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
+                    if (feeding && System.currentTimeMillis() - feedStartTime >= FEED_TIME_MS) { // EDIT
                         stopFeed();
-                        gate.close();
+                        gate.setPosition(CENTER);
                         setPathState(PathState.SHOOT_POSSIXTH_INTAKE);
                     }
                 }
@@ -417,15 +427,15 @@ public class BlueClose extends OpMode {
 
             case SHOOT_POS_SIXTH:
                 if (!follower.isBusy()) {
-                    if (!feeding && flywheelAtSpeed() && pathTimer.getElapsedTime() >= 0.15) {
+                    if (!feeding && pathTimer.getElapsedTime() >= 0.15 && flywheelAtSpeed()) { // EDIT
                         startFeed();
-                        gate.open();
+                        gate.setPosition(OPEN);
                         feedStartTime = System.currentTimeMillis();
                     }
 
-                    if (feeding && (flywheelDropped() || System.currentTimeMillis() - feedStartTime >= 1200)) {
+                    if (feeding && System.currentTimeMillis() - feedStartTime >= FEED_TIME_MS) { // EDIT
                         stopFeed();
-                        gate.close();
+                        gate.setPosition(CENTER);
                         telemetry.addLine("All Paths Completed");
                     }
                 }
@@ -454,10 +464,20 @@ public class BlueClose extends OpMode {
 
         // add mechs
         autoIntake = hardwareMap.get(DcMotor.class, "intake");
-        autoTransfer = hardwareMap.get(DcMotor.class, "transfer");
-        autoFlywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
+        autoIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        autoIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        autoIntake.setDirection(DcMotor.Direction.FORWARD); // reverse if needed
 
-        gate = new AutoGate(hardwareMap);
+        autoTransfer = hardwareMap.get(DcMotor.class, "transfer");
+        autoTransfer.setDirection(DcMotorSimple.Direction.FORWARD);
+        autoTransfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        autoFlywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
+        autoFlywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        autoFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        gate = hardwareMap.get(Servo.class, "gate");
+        gate.setPosition(CENTER);
 
         buildPaths();
         follower.setPose(startPose);
@@ -468,11 +488,12 @@ public class BlueClose extends OpMode {
         opModeTimer.resetTimer();
         setPathState(pathState);
 
-        autoFlywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        autoFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
         // autoFlywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
-                // new PIDFCoefficients(23.0, 0, 0, 13.5));
+        // new PIDFCoefficients(23.0, 0, 0, 13.5));
         autoFlywheel.setVelocity(FLYWHEEL_TARGET_VELOCITY);
+
+        autoIntake.setPower(intakeDefaultPower);
+        autoTransfer.setPower(transferDefaultPower);
     }
 
     @Override
@@ -488,6 +509,7 @@ public class BlueClose extends OpMode {
         telemetry.addData("Time: ", pathTimer.getElapsedTime());
         telemetry.addData("FlywheelVel", "%.1f", autoFlywheel.getVelocity());
         telemetry.addData("Feeding", feeding);
+        telemetry.addData("gatePos", "%.2f", gate.getPosition());
         telemetry.update();
     }
 }
