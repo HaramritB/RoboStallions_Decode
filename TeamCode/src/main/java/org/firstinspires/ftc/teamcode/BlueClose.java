@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 @Autonomous
@@ -34,7 +35,6 @@ public class BlueClose extends OpMode {
 
     private DcMotorEx autoFlywheel;
 
-    // ------------------ EDIT: minimal flywheel fields ------------------
     private final double FLYWHEEL_TARGET_VELOCITY = 1600.0; // ticks/sec (tuned)
     private final double VELOCITY_READY_TOLERANCE = 100.0;  // when considered "at speed"
     private final double VELOCITY_DROP_THRESHOLD  = 250.0;  // drop that indicates a shot
@@ -433,6 +433,7 @@ public class BlueClose extends OpMode {
         setPathState(pathState);
 
         autoFlywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        autoFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
         autoFlywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
                 new PIDFCoefficients(23.0, 0, 0, 13.5));
         autoFlywheel.setVelocity(FLYWHEEL_TARGET_VELOCITY);
