@@ -1,26 +1,20 @@
 package org.firstinspires.ftc.teamcode;
 
 
-import android.graphics.Point;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
 
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 @Autonomous
-public class BlueClose extends OpMode {
+public class RedClose extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
 
@@ -34,14 +28,6 @@ public class BlueClose extends OpMode {
     private final double transferShootPower = 0.75;
 
     private DcMotorEx autoFlywheel;
-
-    private final double FLYWHEEL_TARGET_VELOCITY = 2000.0;
-    private final double FLYWHEEL_P = 23;
-    private final double FLYWHEEL_F = 13.5;
-    private final double VELOCITY_READY_TOLERANCE = 100.0;   // flywheel "at speed"
-    private final double VELOCITY_DROP_THRESHOLD  = 250.0;   // indicates ball contact
-
-    private boolean feeding = false;
 
     public enum PathState {
         // Start Position_End Position
@@ -80,17 +66,17 @@ public class BlueClose extends OpMode {
 
     PathState pathState;
 
-    private final Pose startPose = new Pose(20.532974427994617, 122.43876177658142, Math.toRadians(138));
-    private final Pose shootPose = new Pose(59.294751009421255, 83.87079407806189, Math.toRadians(138));
-    private final Pose firstIntake = new Pose(17.419919246298797, 59.768506056527585, Math.toRadians(195));
+    private final Pose startPose = new Pose(123.0578734858681, 121.76581426648723, Math.toRadians(45));
+    private final Pose shootPose = new Pose(84.6837146702557, 83.8707940780619, Math.toRadians(45));
+    private final Pose firstIntake = new Pose(125.32839838492598, 59.39703903095557, Math.toRadians(0));
     // control point for first intake
-    private final Pose c1 = new Pose(46.62113055181696, 58.63660834454912);
-    private final Pose gateIntake = new Pose(13.35531628532974, 62.58681022880214, Math.toRadians(175));
-    private final Pose secondIntake = new Pose(20.257065948856, 83.60161507402425, Math.toRadians(180));
-    private final Pose thirdIntake = new Pose(20.03903095558547, 35.675639300134584, Math.toRadians(180));
+    private final Pose c1 = new Pose(95.90107671601615, 57.68371467025571);
+    private final Pose gateIntake = new Pose(130.6204576043068, 64.19246298788697, Math.toRadians(5));
+    private final Pose secondIntake = new Pose(125.23822341857336, 83.46702557200538, Math.toRadians(0));
+    private final Pose thirdIntake = new Pose(125.58815612382233, 35.27321668909825, Math.toRadians(0));
 
     // control point for third intake
-    private final Pose c2 = new Pose(70.16083445491253, 36.22139973082097);
+    private final Pose c2 = new Pose(86.2664872139973, 32.663526244952884);
 
 
     private PathChain driveStartPosShootPos, shootPreloadPosFirstIntakePos, firstIntakePosShootPos,
@@ -155,181 +141,201 @@ public class BlueClose extends OpMode {
                 .build();
     }
 
-    private boolean flywheelAtSpeed() {
-        return Math.abs(autoFlywheel.getVelocity() - FLYWHEEL_TARGET_VELOCITY)
-                <= VELOCITY_READY_TOLERANCE;
-    }
-
-    private boolean flywheelDropped() {
-        return autoFlywheel.getVelocity()
-                < (FLYWHEEL_TARGET_VELOCITY - VELOCITY_DROP_THRESHOLD);
-    }
-
-    private void startFeed() {
-        autoIntake.setPower(intakeShootPower);
-        autoTransfer.setPower(transferShootPower);
-        feeding = true;
-    }
-
-    private void stopFeed() {
-        autoIntake.setPower(intakeDefaultPower);
-        autoTransfer.setPower(transferDefaultPower);
-        feeding = false;
-    }
-
 
     public void statePathUpdate() {
-
         switch (pathState) {
-
             case DRIVE_STARTPOS_SHOOT_POS:
                 follower.followPath(driveStartPosShootPos, true);
-                setPathState(PathState.SHOOT_PRELOAD);
+                setPathState(PathState.SHOOT_PRELOAD); // timer
                 break;
-
             case SHOOT_PRELOAD:
+                // flywheel logic
+                // check if follower is done its path
+
                 if (!follower.isBusy()) {
 
-                    if (!feeding && flywheelAtSpeed()) {
-                        startFeed();
-                    }
-
-                    if (feeding && flywheelDropped()) {
-                        stopFeed();
-                        setPathState(PathState.SHOOT_PRELOADFIRST_INTAKE);
-                    }
+                    setPathState(PathState.SHOOT_PRELOADFIRST_INTAKE);
                 }
-                break;
 
+                break;
             case SHOOT_PRELOADFIRST_INTAKE:
-                follower.followPath(shootPreloadPosFirstIntakePos, true);
-                setPathState(PathState.FIRST_INTAKE);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(shootPreloadPosFirstIntakePos, true);
+                    setPathState(PathState.FIRST_INTAKE);
+                }
 
+
+                break;
             case FIRST_INTAKE:
-                autoIntake.setPower(intakeDefaultPower);
-                autoTransfer.setPower(transferDefaultPower);
-                if (!follower.isBusy())
-                    setPathState(PathState.FIRST_INTAKESHOOT_POS);
-                break;
+                // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
 
+                if (!follower.isBusy()) {
+                    setPathState(PathState.FIRST_INTAKESHOOT_POS);
+                }
+
+
+                break;
             case FIRST_INTAKESHOOT_POS:
-                follower.followPath(firstIntakePosShootPos, true);
-                setPathState(PathState.SHOOT_POS_FIRST);
+
+                if (!follower.isBusy()) {
+                    follower.followPath(firstIntakePosShootPos, true);
+                    setPathState(PathState.SHOOT_POS_FIRST);
+                }
+
+
                 break;
             case SHOOT_POS_FIRST:
-                if (!feeding && flywheelAtSpeed()) startFeed();
-                if (feeding && flywheelDropped()) {
-                    stopFeed();
+                // flywheel logic
+
+                if (!follower.isBusy()) {
                     setPathState(PathState.SHOOT_POSFIRST_GATE);
                 }
-                break;
 
+                break;
             case SHOOT_POSFIRST_GATE:
-                follower.followPath(shootPosGateIntakePos, true);
-                setPathState(PathState.SECOND_INTAKE);
-                break;
 
+                if (!follower.isBusy()) {
+                    follower.followPath(shootPosGateIntakePos, true);
+                    setPathState(PathState.SECOND_INTAKE);
+                }
+
+
+                break;
             case SECOND_INTAKE:
-                autoIntake.setPower(intakeDefaultPower);
-                autoTransfer.setPower(transferDefaultPower);
-                if (!follower.isBusy())
+                //intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
+
+                if (!follower.isBusy()) {
                     setPathState(PathState.SECOND_INTAKESHOOT_POS);
-                break;
+                }
 
+                break;
             case SECOND_INTAKESHOOT_POS:
-                follower.followPath(gateIntakePosShootPos, true);
-                setPathState(PathState.SHOOT_POS_SECOND);
-                break;
 
+                if (!follower.isBusy()) {
+                    follower.followPath(gateIntakePosShootPos, true);
+                    setPathState(PathState.SHOOT_POS_SECOND);
+                }
+
+
+                break;
             case SHOOT_POS_SECOND:
-                if (!feeding && flywheelAtSpeed()) startFeed();
-                if (feeding && flywheelDropped()) {
-                    stopFeed();
+                // flywheel logic
+
+                if (!follower.isBusy()) {
                     setPathState(PathState.SHOOT_POSSECOND_GATE);
                 }
-                break;
 
+
+                break;
             case SHOOT_POSSECOND_GATE:
-                follower.followPath(shootPos2GateIntakePos, true);
-                setPathState(PathState.THIRD_INTAKE);
-                break;
 
+                if (!follower.isBusy()) {
+                    follower.followPath(shootPos2GateIntakePos, true);
+                    setPathState(PathState.THIRD_INTAKE);
+                }
+
+
+                break;
             case THIRD_INTAKE:
-                autoIntake.setPower(intakeDefaultPower);
-                autoTransfer.setPower(transferDefaultPower);
-                if (!follower.isBusy())
+                // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
+
+
+                if (!follower.isBusy()) {
                     setPathState(PathState.THIRD_INTAKESHOOT_POS);
-                break;
+                }
 
+
+                break;
             case THIRD_INTAKESHOOT_POS:
-                follower.followPath(gateIntakePosShootPos2, true);
-                setPathState(PathState.SHOOT_POS_THIRD);
-                break;
 
+                if (!follower.isBusy()) {
+                    follower.followPath(gateIntakePosShootPos2, true);
+                    setPathState(PathState.SHOOT_POS_THIRD);
+                }
+
+
+                break;
             case SHOOT_POS_THIRD:
-                if (!feeding && flywheelAtSpeed()) startFeed();
-                if (feeding && flywheelDropped()) {
-                    stopFeed();
+                // flywheel logic
+
+                if (!follower.isBusy()) {
                     setPathState(PathState.SHOOT_POSTHIRD_GATE);
                 }
+
+
+                break;
+            case SHOOT_POSTHIRD_GATE:
+
+                if (!follower.isBusy()) {
+                    follower.followPath(shootPos3GateIntakePos, true);
+                    setPathState(PathState.FOURTH_INTAKE);
+                }
+
+
                 break;
             case FOURTH_INTAKE:
-                autoIntake.setPower(intakeDefaultPower);
-                autoTransfer.setPower(transferDefaultPower);
+                // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
 
                 if (!follower.isBusy()) {
                     setPathState(PathState.FOURTH_INTAKESHOOT_POS);
                 }
-                break;
 
+                break;
             case FOURTH_INTAKESHOOT_POS:
                 if (!follower.isBusy()) {
                     follower.followPath(gateIntakePosShootPos3, true);
                     setPathState(PathState.SHOOT_POS_FOURTH);
                 }
+
+
                 break;
-
             case SHOOT_POS_FOURTH:
-                if (!feeding && flywheelAtSpeed()) {
-                    startFeed();
-                }
-
-                if (feeding && flywheelDropped()) {
-                    stopFeed();
+                // flywheel logic
+                if (!follower.isBusy()) {
                     setPathState(PathState.SHOOT_POSFIFTH_INTAKE);
                 }
+
+
                 break;
             case SHOOT_POSFIFTH_INTAKE:
                 if (!follower.isBusy()) {
                     follower.followPath(shootPosSecondIntakePos, true);
                     setPathState(PathState.FIFTH_INTAKE);
                 }
-                break;
 
+
+                break;
             case FIFTH_INTAKE:
-                autoIntake.setPower(intakeDefaultPower);
-                autoTransfer.setPower(transferDefaultPower);
+                // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
 
                 if (!follower.isBusy()) {
                     setPathState(PathState.FIFTH_INTAKESHOOT_POS);
                 }
-                break;
 
+                break;
             case FIFTH_INTAKESHOOT_POS:
+
                 if (!follower.isBusy()) {
                     follower.followPath(secondIntakePosShootPos, true);
                     setPathState(PathState.SHOOT_POS_FIFTH);
                 }
                 break;
-
             case SHOOT_POS_FIFTH:
-                if (!feeding && flywheelAtSpeed()) {
-                    startFeed();
-                }
+                // flywheel logic
 
-                if (feeding && flywheelDropped()) {
-                    stopFeed();
+                if (!follower.isBusy()) {
+
+
                     setPathState(PathState.SHOOT_POSSIXTH_INTAKE);
                 }
                 break;
@@ -339,34 +345,35 @@ public class BlueClose extends OpMode {
                     setPathState(PathState.SIXTH_INTAKE);
                 }
                 break;
-
             case SIXTH_INTAKE:
-                autoIntake.setPower(intakeDefaultPower);
-                autoTransfer.setPower(transferDefaultPower);
+                // intake logic
+                //autoIntake.setPower(0.95);
+                //autoTransfer.setPower(1.0);
 
                 if (!follower.isBusy()) {
+
                     setPathState(PathState.SIXTH_INTAKESHOOT_POS);
                 }
-                break;
 
+                break;
             case SIXTH_INTAKESHOOT_POS:
                 if (!follower.isBusy()) {
                     follower.followPath(thirdIntakeShootPos, true);
                     setPathState(PathState.SHOOT_POS_SIXTH);
                 }
                 break;
-
             case SHOOT_POS_SIXTH:
-                if (!feeding && flywheelAtSpeed()) {
-                    startFeed();
-                }
+                // flywheel logic
 
-                if (feeding && flywheelDropped()) {
-                    stopFeed();
+                if (!follower.isBusy()) {
+
+
                     telemetry.addLine("All Paths Completed");
                 }
+
                 break;
             default:
+                telemetry.addLine("No State Commanded");
                 break;
         }
     }
@@ -375,7 +382,6 @@ public class BlueClose extends OpMode {
     public void setPathState(PathState newState) {
         pathState = newState;
         pathTimer.resetTimer();
-        feeding = false;
     }
 
     @Override
@@ -387,16 +393,8 @@ public class BlueClose extends OpMode {
         follower = Constants.createFollower(hardwareMap);
 
         // add mechs
-        autoIntake = hardwareMap.get(DcMotor.class, "intake");
-        autoTransfer = hardwareMap.get(DcMotor.class, "transfer");
-        autoFlywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
-
-        autoFlywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        autoFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-        autoFlywheel.setPIDFCoefficients(
-                DcMotor.RunMode.RUN_USING_ENCODER,
-                new PIDFCoefficients(FLYWHEEL_P, 0, 0, FLYWHEEL_F)
-        );
+        //autoIntake = hardwareMap.get(DcMotor.class, "intake");
+        //autoTransfer = hardwareMap.get(DcMotor.class, "transfer");
 
         buildPaths();
         follower.setPose(startPose);
@@ -404,7 +402,6 @@ public class BlueClose extends OpMode {
 
     public void start() {
         opModeTimer.resetTimer();
-        autoFlywheel.setVelocity(FLYWHEEL_TARGET_VELOCITY);
         setPathState(pathState);
     }
 
@@ -419,10 +416,6 @@ public class BlueClose extends OpMode {
         telemetry.addData("Y: ", follower.getPose().getY());
         telemetry.addData("Heading: ", follower.getPose().getHeading());
         telemetry.addData("Time: ", pathTimer.getElapsedTime());
-        telemetry.addData("State", pathState);
-        telemetry.addData("Flywheel Vel", autoFlywheel.getVelocity());
-        telemetry.addData("Feeding", feeding);
-        telemetry.update();
     }
 }
 

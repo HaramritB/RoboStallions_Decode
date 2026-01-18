@@ -9,8 +9,8 @@ public class Intake {
 
     private final DcMotor intakeMotor;
 
-    private final double intakePower = 0.95;
-    private final double ejectPower = -0.9;
+    private final double defaultPower = 0.75;
+    // private final double ejectPower = -0.9;
 
     private boolean isRunning = false;
 
@@ -24,7 +24,7 @@ public class Intake {
     // Call this every loop and pass gamepad1
     public void update(Gamepad gamepad) {
         if (gamepad.x) {
-            intakeMotor.setPower(intakePower);
+            intakeMotor.setPower(defaultPower);
             isRunning = true;
         } else if (gamepad.b) {
             intakeMotor.setPower(0);

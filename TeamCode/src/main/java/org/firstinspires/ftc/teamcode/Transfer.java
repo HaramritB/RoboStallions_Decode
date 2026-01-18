@@ -17,14 +17,10 @@ public class Transfer {
 
     public void update(double triggerValue) {
         if (triggerValue > 0.1) {
-            transfer.setPower(1.0);   // full speed while held nigge
+            transfer.setPower(0.05);   // full speed while held
         } else {
             stop();
         }
-    }
-
-    public void autoTransfer() {
-        transfer.setPower(1.0);
     }
 
     public void stop() {
