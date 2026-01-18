@@ -6,59 +6,66 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
+
 import org.firstinspires.ftc.teamcode.Intake;
 import org.firstinspires.ftc.teamcode.Transfer;
 
-@TeleOp(name = "Flywheel Test For Real", group = "Test")
+@TeleOp(name = "Flywheel Tuner & Calibrator", group = "Test")
 public class FlywheelTuner extends OpMode {
 
-    // Motors / subsystems
+    // Subsystems
     private DcMotorEx flywheelMotor;
-    private Intake intake;
+    private Intake intakeTest;
+    private Transfer transferTest;
+    private Distance distanceSensor;
 
-    // Intake toggle
-    private boolean intakeOn = false;
-    private boolean lastX = false;
-
-    // Flywheel velocities
-    private double highVelocity = 1600;
-    private double lowVelocity = 900;
-    private double targetVelocity = highVelocity;
+    // State Variables
+    private double targetVelocity = 1600;
 
     // PIDF values
     private double P = 0.0;
     private double F = 13.5;
 
-    // Tuning step sizes
-    private final double[] stepSizes = {10, 1, 0.1, 0.01, 0.001, 0.0001};
+    // Tuning/Calibration State
+    private enum TunerMode {
+        PID_TUNING,
+        SPEED_CALIBRATION
+    }
+    private TunerMode currentMode = TunerMode.SPEED_CALIBRATION; // Default to speed
+
+    // Tuning step sizes (used for both PID and Speed)
+    private final double[] stepSizes = {50, 10, 1, 0.1, 0.01, 0.001};
     private int stepIndex = 0;
 
     // Edge detection
-    private boolean lastUp, lastDown, lastLeft, lastRight, lastLB, lastRB;
+    private boolean lastUp, lastDown, lastLeft, lastRight, lastLB, lastRB, lastX, lastA;
 
     @Override
     public void init() {
-
+        // Hardware Init
         flywheelMotor = hardwareMap.get(DcMotorEx.class, "flywheel");
         flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         flywheelMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        // Initialize subsystems (if they don't require loop updates immediately)
+        distanceSensor = new Distance(hardwareMap);
 
+        // Initial PIDF
         updatePIDF();
+
+        telemetry.addLine("Ready. Press X to switch modes.");
+        telemetry.update();
     }
 
     @Override
     public void loop() {
-        Intake intakeTest = new Intake(hardwareMap);
+        // Update Subsystems
+        if (intakeTest == null) intakeTest = new Intake(hardwareMap);
+        if (transferTest == null) transferTest = new Transfer(hardwareMap);
 
         intakeTest.update(gamepad1);
-
-        Transfer transferTest = new Transfer(hardwareMap);
-
-        transferTest.update(0.2);
+        transferTest.update(0.2); // Constant speed for test
+        distanceSensor.update();
 
         // Read buttons
         boolean up = gamepad1.dpad_up;
@@ -67,51 +74,92 @@ public class FlywheelTuner extends OpMode {
         boolean right = gamepad1.dpad_right;
         boolean lb = gamepad1.left_bumper;
         boolean rb = gamepad1.right_bumper;
-        boolean x = gamepad1.x;
+        boolean x = gamepad1.x; // Mode Switch
+        boolean a = gamepad1.a; // Quick reset
 
-        // ---------------- PIDF TUNING ----------------
-        if (up && !lastUp)    P += stepSizes[stepIndex];
-        if (down && !lastDown) P -= stepSizes[stepIndex];
+        // ---------------- CONTROL LOGIC ----------------
 
-        if (right && !lastRight) F += stepSizes[stepIndex];
-        if (left && !lastLeft)   F -= stepSizes[stepIndex];
+        // 1. Switch Modes (X Button)
+        if (x && !lastX) {
+            if (currentMode == TunerMode.PID_TUNING) {
+                currentMode = TunerMode.SPEED_CALIBRATION;
+            } else {
+                currentMode = TunerMode.PID_TUNING;
+            }
+        }
 
+        // 2. Adjust Step Size (Left Bumper)
         if (lb && !lastLB) {
             stepIndex = (stepIndex + 1) % stepSizes.length;
         }
 
-        if (rb && !lastRB) {
-            targetVelocity = (targetVelocity == highVelocity)
-                    ? lowVelocity
-                    : highVelocity;
+        // 3. Mode Specific Controls
+        double currentStep = stepSizes[stepIndex];
+
+        if (currentMode == TunerMode.PID_TUNING) {
+            // --- PID MODE ---
+            // Up/Down = P gain
+            if (up && !lastUp)    P += currentStep;
+            if (down && !lastDown) P -= currentStep;
+
+            // Left/Right = F gain
+            if (right && !lastRight) F += currentStep;
+            if (left && !lastLeft)   F -= currentStep;
+
+        } else {
+            // --- SPEED CALIBRATION MODE ---
+            // Up/Down = Target Velocity
+            if (up && !lastUp)    targetVelocity += currentStep;
+            if (down && !lastDown) targetVelocity -= currentStep;
+
+            // Right Bumper = Toggle presets (still useful)
+            if (rb && !lastRB) {
+                targetVelocity = (targetVelocity == 1600) ? 900 : 1600;
+            }
+
+            // A Button = Emergency Stop / Zero
+            if (a && !lastA) {
+                targetVelocity = 0;
+            }
         }
 
         // Save button states
-        lastUp = up;
-        lastDown = down;
-        lastLeft = left;
-        lastRight = right;
-        lastLB = lb;
-        lastRB = rb;
+        lastUp = up; lastDown = down; lastLeft = left; lastRight = right;
+        lastLB = lb; lastRB = rb; lastX = x; lastA = a;
 
-        // Apply PIDF + velocity
+        // Apply Motor Updates
         updatePIDF();
         flywheelMotor.setVelocity(targetVelocity);
 
         // ---------------- TELEMETRY ----------------
-        telemetry.addData("Target Velocity", targetVelocity);
-        telemetry.addData("Current Velocity", "%.1f", flywheelMotor.getVelocity());
-        telemetry.addData("P", P);
-        telemetry.addData("F", F);
-        telemetry.addData("Step Size", stepSizes[stepIndex]);
-        telemetry.addData("Intake", intakeOn ? "ON" : "OFF");
+        telemetry.addLine("=== FLYWHEEL CALIBRATION ===");
+        telemetry.addData("MODE", currentMode == TunerMode.PID_TUNING ? "PID TUNING" : "SPEED ADJUST");
+        telemetry.addData("Step Size", currentStep);
+        telemetry.addLine("----------------------------");
+
+        if (distanceSensor.hasValidTag()) {
+            telemetry.addData("Distance (m)", "%.3f", distanceSensor.getDistanceMeters());
+            telemetry.addData("Tag ID", distanceSensor.getTagId());
+        } else {
+            telemetry.addData("Distance", "NO TAG");
+        }
+
+        telemetry.addLine("----------------------------");
+        telemetry.addData("Target Vel", "%.0f", targetVelocity);
+        telemetry.addData("Actual Vel", "%.0f", flywheelMotor.getVelocity());
+        telemetry.addData("PIDF (P/F)", "%.4f / %.4f", P, F);
+
         telemetry.update();
     }
 
     private void updatePIDF() {
-        flywheelMotor.setPIDFCoefficients(
-                DcMotor.RunMode.RUN_USING_ENCODER,
-                new PIDFCoefficients(P, 0, 0, F)
-        );
+        // Only update if changed to save bus bandwidth
+        PIDFCoefficients current = flywheelMotor.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+        if (current.p != P || current.f != F) {
+            flywheelMotor.setPIDFCoefficients(
+                    DcMotor.RunMode.RUN_USING_ENCODER,
+                    new PIDFCoefficients(P, 0, 0, F)
+            );
+        }
     }
 }
