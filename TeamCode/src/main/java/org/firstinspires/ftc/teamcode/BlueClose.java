@@ -42,7 +42,7 @@ public class BlueClose extends OpMode {
 
     private final double FLYWHEEL_TARGET_VELOCITY = 1600.0; // ticks/sec (tuned)
     private final double VELOCITY_READY_TOLERANCE = 100.0;  // when considered "at speed"
-    private final double VELOCITY_DROP_THRESHOLD  = 250.0;  // drop that indicates a shot
+    private final double VELOCITY_DROP_THRESHOLD  = 50.0;  // drop that indicates a shot
     private boolean feeding = false; // true while we are feeding a ball into the flywheel
 
     public enum PathState {
