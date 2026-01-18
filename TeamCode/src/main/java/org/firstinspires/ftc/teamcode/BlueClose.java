@@ -19,6 +19,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
+import org.firstinspires.ftc.teamcode.gate.AutoGate;
+import org.firstinspires.ftc.teamcode.gate.Gate;
+
 @Autonomous
 public class BlueClose extends OpMode {
     private Follower follower;
@@ -34,6 +37,8 @@ public class BlueClose extends OpMode {
     private final double transferShootPower = 0.75;
 
     private DcMotorEx autoFlywheel;
+
+    private AutoGate gate;
 
     private final double FLYWHEEL_TARGET_VELOCITY = 1600.0; // ticks/sec (tuned)
     private final double VELOCITY_READY_TOLERANCE = 100.0;  // when considered "at speed"
@@ -185,9 +190,11 @@ public class BlueClose extends OpMode {
                     // velocity-drop based feed
                     if (!feeding && flywheelAtSpeed()) {
                         startFeed();
+                        gate.open();
                     }
                     if (feeding && flywheelDropped()) {
                         stopFeed();
+                        gate.close();
                         setPathState(PathState.SHOOT_PRELOADFIRST_INTAKE);
                     }
                 }
@@ -218,9 +225,11 @@ public class BlueClose extends OpMode {
                 if (!follower.isBusy()) {
                     if (!feeding && flywheelAtSpeed()) {
                         startFeed();
+                        gate.open();
                     }
                     if (feeding && flywheelDropped()) {
                         stopFeed();
+                        gate.close();
                         setPathState(PathState.SHOOT_POSFIRST_GATE);
                     }
                 }
@@ -251,9 +260,11 @@ public class BlueClose extends OpMode {
                 if (!follower.isBusy()) {
                     if (!feeding && flywheelAtSpeed()) {
                         startFeed();
+                        gate.open();
                     }
                     if (feeding && flywheelDropped()) {
                         stopFeed();
+                        gate.close();
                         setPathState(PathState.SHOOT_POSSECOND_GATE);
                     }
                 }
@@ -284,9 +295,11 @@ public class BlueClose extends OpMode {
                 if (!follower.isBusy()) {
                     if (!feeding && flywheelAtSpeed()) {
                         startFeed();
+                        gate.open();
                     }
                     if (feeding && flywheelDropped()) {
                         stopFeed();
+                        gate.close();
                         setPathState(PathState.SHOOT_POSTHIRD_GATE);
                     }
                 }
@@ -319,9 +332,11 @@ public class BlueClose extends OpMode {
                 if (!follower.isBusy()) {
                     if (!feeding && flywheelAtSpeed()) {
                         startFeed();
+                        gate.open();
                     }
                     if (feeding && flywheelDropped()) {
                         stopFeed();
+                        gate.close();
                         setPathState(PathState.SHOOT_POSFIFTH_INTAKE);
                     }
                 }
@@ -356,9 +371,11 @@ public class BlueClose extends OpMode {
                 if (!follower.isBusy()) {
                     if (!feeding && flywheelAtSpeed()) {
                         startFeed();
+                        gate.open();
                     }
                     if (feeding && flywheelDropped()) {
                         stopFeed();
+                        gate.close();
                         setPathState(PathState.SHOOT_POSSIXTH_INTAKE);
                     }
                 }
@@ -391,9 +408,11 @@ public class BlueClose extends OpMode {
                 if (!follower.isBusy()) {
                     if (!feeding && flywheelAtSpeed()) {
                         startFeed();
+                        gate.open();
                     }
                     if (feeding && flywheelDropped()) {
                         stopFeed();
+                        gate.close();
                         telemetry.addLine("All Paths Completed");
                     }
                 }
@@ -424,10 +443,13 @@ public class BlueClose extends OpMode {
         autoTransfer = hardwareMap.get(DcMotor.class, "transfer");
         autoFlywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
 
+        gate = new AutoGate(hardwareMap);
+
         buildPaths();
         follower.setPose(startPose);
     }
 
+    @Override
     public void start() {
         opModeTimer.resetTimer();
         setPathState(pathState);
