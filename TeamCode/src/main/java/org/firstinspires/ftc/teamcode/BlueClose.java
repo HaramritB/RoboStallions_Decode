@@ -434,8 +434,8 @@ public class BlueClose extends OpMode {
 
         autoFlywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         autoFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-        autoFlywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
-                new PIDFCoefficients(23.0, 0, 0, 13.5));
+        // autoFlywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
+                // new PIDFCoefficients(23.0, 0, 0, 13.5));
         autoFlywheel.setVelocity(FLYWHEEL_TARGET_VELOCITY);
     }
 
