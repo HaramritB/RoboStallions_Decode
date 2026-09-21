@@ -13,8 +13,13 @@ public class AprilTagTracking {
     private final Telemetry telemetry;
 
     // PID / proportional control
-    private final double kP = 0.015;
+    private final double kP = 0.02; // Increased slightly for snappier response
     private final double maxPower = 0.85;
+    private final double minPower = 0.05; // Helps turret overcome static friction
+
+    // Encoder conversion (Change these based on your turret's gear ratio)
+    // Example: 28 ticks per rev * 20:1 gearbox * 3:1 turret gear = 1680 ticks/rev
+    private final double TICKS_PER_REVOLUTION = 383.6; // Update this!
 
     // Low-pass filter
     private final double alpha = 0.4;
@@ -30,6 +35,8 @@ public class AprilTagTracking {
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         rotationMotor = hardwareMap.get(DcMotor.class, "rotation");
         rotationMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rotationMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rotationMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Configure pipeline for AprilTag detection
         limelight.pipelineSwitch(7);
@@ -56,10 +63,17 @@ public class AprilTagTracking {
             }
 
             // Deadband
-            if (Math.abs(filteredTx) < deadband) filteredTx = 0;
+            if (Math.abs(filteredTx) < deadband) {
+                rotationMotor.setPower(0);
+                return;
+            }
 
             // Compute power
             double power = -kP * filteredTx;
+            
+            // Add minimum power to overcome friction
+            power += Math.signum(power) * minPower;
+            
             power = clamp(power, -maxPower, maxPower);
 
             rotationMotor.setPower(power);
@@ -74,8 +88,16 @@ public class AprilTagTracking {
             firstReading = true;
             telemetry.addLine("No Tag Detected");
         }
+    }
 
-        telemetry.update();
+    /** 
+     * Returns the current turret angle in radians relative to the robot's front.
+     * This is REQUIRED for TurretCameraLocalizer to work correctly.
+     */
+    public double getTurretAngleRadians() {
+        double ticks = rotationMotor.getCurrentPosition();
+        // (ticks / TICKS_PER_REVOLUTION) * 2 * PI
+        return (ticks / TICKS_PER_REVOLUTION) * 2.0 * Math.PI;
     }
 
     /** Manual control for turret (e.g., RB/LB) */
